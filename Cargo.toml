@@ -1,0 +1,16 @@
+[package]
+name = "jira-time-tracker"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4.43"
+clap = "4.5.57"
+color-eyre = "0.6.5"
+crossterm = "0.29.0"
+ratatui = "0.30.0"
+reqwest = "0.13.1"
+serde = "1.0.228"
+serde_json = "1.0.149"
+thiserror = "2.0.18"
+tokio = "1.49.0"
