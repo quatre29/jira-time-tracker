@@ -5,51 +5,37 @@ use ratatui::{
 };
 
 use crate::{
-    jira::models::JiraTicket,
+    app::App,
     ui::{components::Component, theme::Theme},
 };
 
-pub struct TicketList<'a> {
-    tickets: &'a [JiraTicket],
-    selected_idx: Option<usize>,
+pub struct TicketList {
     title: String,
 }
 
-impl<'a> TicketList<'a> {
-    pub fn new(tickets: &'a [JiraTicket]) -> Self {
+impl TicketList {
+    pub fn new() -> Self {
         Self {
-            tickets,
-            selected_idx: None,
             title: "Tickets".to_string(),
         }
     }
-
-    pub fn title(mut self, title: impl Into<String>) -> Self {
-        self.title = title.into();
-        self
-    }
-
-    pub fn selected(mut self, idx: Option<usize>) -> Self {
-        self.selected_idx = idx;
-        self
-    }
 }
 
-impl Component for TicketList<'_> {
-    fn render(&self, frame: &mut Frame, area: Rect) {
+impl Component for TicketList {
+    fn render(&self, app: &App, frame: &mut Frame, area: Rect) {
         let block = Block::bordered()
             .title(self.title.as_str())
             .border_style(Theme::border());
 
-        if self.tickets.is_empty() {
+        if app.tickets.is_empty() {
             let empty = ratatui::widgets::Paragraph::new("No tickets found")
-                .block(block)
+                .block(block.clone())
                 .style(Theme::dimmed());
 
             frame.render_widget(empty, area);
         }
 
-        let items: Vec<ListItem> = self
+        let items: Vec<ListItem> = app
             .tickets
             .iter()
             .map(|ticket| {
@@ -59,9 +45,13 @@ impl Component for TicketList<'_> {
             })
             .collect();
 
-        let list = List::new(items);
+        let list = List::new(items)
+            .highlight_style(Theme::selected())
+            .highlight_symbol(">> ")
+            .block(block);
+
         let mut state = ListState::default();
-        state.select(self.selected_idx);
+        state.select(app.selected_idx);
 
         frame.render_stateful_widget(list, area, &mut state);
     }

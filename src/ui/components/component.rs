@@ -1,5 +1,7 @@
 use ratatui::{Frame, layout::Rect};
 
+use crate::app::App;
+
 pub trait Component {
-    fn render(&self, frame: &mut Frame, area: Rect);
+    fn render(&self, app: &App, frame: &mut Frame, area: Rect);
 }

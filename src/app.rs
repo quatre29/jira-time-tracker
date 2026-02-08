@@ -9,6 +9,7 @@ use crate::jira::models::JiraTicket;
 pub struct App {
     pub exit: bool,
     pub tickets: Vec<JiraTicket>,
+    pub selected_idx: Option<usize>,
 }
 
 impl App {
@@ -17,6 +18,7 @@ impl App {
         Self {
             exit: false,
             tickets,
+            selected_idx: Some(0),
         }
     }
 
@@ -28,6 +30,7 @@ impl App {
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
 
+            // TODO: Move to events.rs ??
             // TODO: Handle unwrap() with custom errors!
             match rx.recv().unwrap() {
                 Event::Input(key_event) => self.handle_key_event(key_event)?,
@@ -41,6 +44,29 @@ impl App {
         crate::ui::render(frame, self);
     }
 
+    fn next_ticket(&mut self) {
+        if self.tickets.is_empty() {
+            return;
+        }
+
+        self.selected_idx = Some(match self.selected_idx {
+            Some(i) => (1 + i) % self.tickets.len(), // Move down, wrap to top
+            None => 0,
+        })
+    }
+    fn previous_ticket(&mut self) {
+        if self.tickets.is_empty() {
+            return;
+        }
+
+        self.selected_idx = Some(match self.selected_idx {
+            Some(i) if i > 0 => i - 1,         // Move up
+            Some(_) => self.tickets.len() - 1, // Wrap to bottom
+            None => 0,
+        })
+    }
+
+    // TODO: Move to events.rs
     fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
         if key_event.kind != KeyEventKind::Press {
             return Ok(());
@@ -48,6 +74,8 @@ impl App {
 
         match key_event.code {
             KeyCode::Char('q') => self.exit = true,
+            KeyCode::Up => self.previous_ticket(),
+            KeyCode::Down => self.next_ticket(),
             _ => {}
         }
 

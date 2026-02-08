@@ -10,10 +10,11 @@ pub struct JiraTicket {
 
 impl JiraTicket {
     // NOTE:  we will update the rest of the fields when we get a response from jira api
-    pub fn new(branch_name: &str) -> Self {
+    pub fn new(branch_name: &str, description: impl Into<String>) -> Self {
         Self {
             branch_name: branch_name.to_string(),
-            description: String::new(),
+            //  NOTE: temp - this will be populated by Jira API
+            description: description.into(),
             logged_time: Duration::zero(),
             total_estimate: Duration::zero(),
             last_updated: Utc::now(),

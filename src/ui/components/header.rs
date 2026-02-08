@@ -1,6 +1,9 @@
 use ratatui::{Frame, layout::Rect, widgets::Paragraph};
 
-use crate::ui::{components::component::Component, theme::Theme};
+use crate::{
+    app::App,
+    ui::{components::component::Component, theme::Theme},
+};
 
 pub struct Header {
     title: String,
@@ -15,7 +18,7 @@ impl Header {
 }
 
 impl Component for Header {
-    fn render(&self, frame: &mut Frame, area: Rect) {
+    fn render(&self, app: &App, frame: &mut Frame, area: Rect) {
         let header = Paragraph::new(self.title.as_str())
             .style(Theme::title())
             .centered();
