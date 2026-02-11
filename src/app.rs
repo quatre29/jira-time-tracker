@@ -113,7 +113,7 @@ impl App {
                     self.next_ticket();
                 }
             }
-            KeyCode::Enter => {
+            KeyCode::Enter if matches!(self.popup, PopupState::None) => {
                 let selected_ticket = self.selected_ticket();
 
                 if let Some(selected_ticket) = selected_ticket {
