@@ -13,6 +13,10 @@ impl Theme {
         Style::default().fg(Color::White)
     }
 
+    pub fn default_border_color() -> Color {
+        Color::Cyan
+    }
+
     pub fn selected() -> Style {
         Style::default()
             .bg(Color::DarkGray)

@@ -33,6 +33,8 @@ impl Component for TicketList {
                 .style(Theme::dimmed());
 
             frame.render_widget(empty, area);
+
+            return;
         }
 
         let items: Vec<ListItem> = app

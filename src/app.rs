@@ -5,11 +5,18 @@ use ratatui::{DefaultTerminal, Frame};
 
 use crate::events::Event;
 use crate::jira::models::JiraTicket;
+use crate::ui::components::TimeInputDialog;
+
+pub enum PopupState {
+    None,
+    InputTime(TimeInputDialog),
+}
 
 pub struct App {
     pub exit: bool,
     pub tickets: Vec<JiraTicket>,
     pub selected_idx: Option<usize>,
+    pub popup: PopupState,
 }
 
 impl App {
@@ -19,7 +26,16 @@ impl App {
             exit: false,
             tickets,
             selected_idx: Some(0),
+            popup: PopupState::None,
         }
+    }
+
+    pub fn show_time_input_dialog(&mut self, title: &str) {
+        self.popup = PopupState::InputTime(TimeInputDialog::new(title));
+    }
+
+    pub fn close_popup(&mut self) {
+        self.popup = PopupState::None;
     }
 
     pub fn run(
@@ -44,6 +60,10 @@ impl App {
         crate::ui::render(frame, self);
     }
 
+    fn selected_ticket(&self) -> Option<&JiraTicket> {
+        self.selected_idx.and_then(|i| self.tickets.get(i))
+    }
+
     fn next_ticket(&mut self) {
         if self.tickets.is_empty() {
             return;
@@ -54,6 +74,7 @@ impl App {
             None => 0,
         })
     }
+
     fn previous_ticket(&mut self) {
         if self.tickets.is_empty() {
             return;
@@ -72,10 +93,36 @@ impl App {
             return Ok(());
         }
 
+        match &mut self.popup {
+            PopupState::InputTime(dialog) => match key_event.code {
+                KeyCode::Esc => self.close_popup(),
+                _ => {}
+            },
+            PopupState::None => {}
+        }
+
         match key_event.code {
             KeyCode::Char('q') => self.exit = true,
-            KeyCode::Up => self.previous_ticket(),
-            KeyCode::Down => self.next_ticket(),
+            KeyCode::Up => {
+                if let PopupState::None = self.popup {
+                    self.previous_ticket();
+                }
+            }
+            KeyCode::Down => {
+                if let PopupState::None = self.popup {
+                    self.next_ticket();
+                }
+            }
+            KeyCode::Enter => {
+                let selected_ticket = self.selected_ticket();
+
+                if let Some(selected_ticket) = selected_ticket {
+                    // TODO: fix this lifetime hack - clone().as_str()
+                    // we might need to pass the ticket ---- or maybe we can get the ticket details
+                    // from the popup::app.selected_ticket()
+                    self.show_time_input_dialog(selected_ticket.branch_name.clone().as_str());
+                }
+            }
             _ => {}
         }
 
