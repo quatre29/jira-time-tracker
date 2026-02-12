@@ -1,3 +1,4 @@
+use std::time::{Duration, Instant};
 use std::{io, sync::mpsc};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
@@ -17,6 +18,7 @@ pub struct App {
     pub tickets: Vec<JiraTicket>,
     pub selected_idx: Option<usize>,
     pub popup: PopupState,
+    pub last_frame: Instant,
 }
 
 impl App {
@@ -27,6 +29,7 @@ impl App {
             tickets,
             selected_idx: Some(0),
             popup: PopupState::None,
+            last_frame: Instant::now(),
         }
     }
 
@@ -43,14 +46,49 @@ impl App {
         terminal: &mut DefaultTerminal,
         rx: mpsc::Receiver<Event>,
     ) -> io::Result<()> {
-        while !self.exit {
-            terminal.draw(|frame| self.draw(frame))?;
+        let tick_rate = std::time::Duration::from_millis(30); // ~30 FPS
 
-            // TODO: Move to events.rs ??
-            // TODO: Handle unwrap() with custom errors!
-            match rx.recv().unwrap() {
-                Event::Input(key_event) => self.handle_key_event(key_event)?,
+        // while !self.exit {
+        //     terminal.draw(|frame| self.draw(frame))?;
+        //
+        //     // TODO: Move to events.rs ??
+        //     // TODO: Handle unwrap() with custom errors!
+        //     match rx.recv_timeout(tick_rate).unwrap() {
+        //         Event::Input(key_event) => self.handle_key_event(key_event)?,
+        //     }
+        // }
+
+        // while !self.exit {
+        //     let now = Instant::now();
+        //     let dt = now - self.last_frame;
+        //     self.last_frame = now;
+        //
+        //     terminal.draw(|f| self.draw(f, dt))?;
+        //
+        //     // Use recv_timeout instead of recv
+        //     match rx.recv_timeout(tick_rate) {
+        //         Ok(Event::Input(key)) => self.handle_key_event(key)?,
+        //         Err(mpsc::RecvTimeoutError::Timeout) => {
+        //             // This "tick" allows the screen to re-draw and advance animations
+        //         }
+        //         Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
+        //     }
+        // }
+
+        while !self.exit {
+            let now = Instant::now();
+            let dt = now - self.last_frame;
+            self.last_frame = now;
+
+            terminal.draw(|f| self.draw(f))?;
+
+            while let Ok(event) = rx.try_recv() {
+                match event {
+                    Event::Input(key_event) => self.handle_key_event(key_event)?,
+                }
             }
+
+            std::thread::sleep(tick_rate);
         }
 
         Ok(())

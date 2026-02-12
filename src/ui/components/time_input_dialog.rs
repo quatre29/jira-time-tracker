@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Rect},
@@ -59,7 +61,7 @@ impl TimeInputDialog {
 }
 
 impl Component for TimeInputDialog {
-    fn render(&self, _app: &App, frame: &mut Frame, area: Rect) {
+    fn render(&self, app: &App, frame: &mut Frame, area: Rect) {
         let area = self.centered_rect(self.width, self.height, area);
 
         frame.render_widget(Clear, area);
@@ -69,16 +71,17 @@ impl Component for TimeInputDialog {
             .title_alignment(Alignment::Center)
             .border_style(Theme::border());
 
-        frame.render_widget(block, area);
-
         let mut slide_effect = fx::slide_in(
             tachyonfx::Motion::UpToDown,
-            15,
-            15,
+            100,
+            50,
             Color::Cyan,
             EffectTimer::from_ms(300, Interpolation::CubicOut),
         );
 
-        frame.render_effect(&mut slide_effect, area, FxDuration::from_millis(0));
+        // let duration = duration.as_millis();
+        frame.render_effect(&mut slide_effect, area, FxDuration::ZERO);
+
+        frame.render_widget(block, area);
     }
 }
