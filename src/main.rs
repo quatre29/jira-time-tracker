@@ -1,7 +1,6 @@
 use std::io;
 
 use app::App;
-use events::EventHandler;
 use jira::models::JiraTicket;
 
 mod app;
@@ -25,13 +24,9 @@ fn get_placeholder_tickets() -> Vec<JiraTicket> {
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
-
     let mut app = App::new(get_placeholder_tickets());
 
-    let event_handler = EventHandler::new();
-    let event_rx = event_handler.start();
-
-    let app_result = app.run(&mut terminal, event_rx);
+    let app_result = app.run(&mut terminal);
 
     ratatui::restore();
 

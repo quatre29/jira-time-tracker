@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use ratatui::{
     Frame,
     layout::{Constraint, Layout},
@@ -9,7 +11,7 @@ use crate::{
     ui::components::{Component, Header, TicketList},
 };
 
-pub fn render(frame: &mut Frame, app: &App) {
+pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
     let area = frame.area();
 
     let vertical_layout = Layout::vertical([
@@ -22,6 +24,6 @@ pub fn render(frame: &mut Frame, app: &App) {
 
     let [title_area, body_area] = vertical_layout.areas(area);
 
-    Header::new("Jira Time Tracker").render(app, frame, title_area);
-    TicketList::new().render(app, frame, body_area);
+    Header::new("Jira Time Tracker").render(app, frame, title_area, dt);
+    TicketList::new().render(app, frame, body_area, dt);
 }

@@ -20,7 +20,7 @@ impl Header {
 }
 
 impl Component for Header {
-    fn render(&self, _app: &App, frame: &mut Frame, area: Rect) {
+    fn render(&self, _app: &App, frame: &mut Frame, area: Rect, dt: Duration) {
         let header = Paragraph::new(self.title.as_str())
             .style(Theme::title())
             .centered();

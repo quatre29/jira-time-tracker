@@ -11,6 +11,7 @@ pub struct EventHandler {
     rx: mpsc::Receiver<Event>,
 }
 
+// TODO: Remove/Keep mpsc events? maybe needed when we implement JiraApi?
 impl EventHandler {
     pub fn new() -> Self {
         let (tx, rx) = mpsc::channel();

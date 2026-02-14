@@ -3,7 +3,7 @@ use std::time::Duration;
 use ratatui::{
     Frame,
     layout::Rect,
-    widgets::{Block, List, ListItem, ListState},
+    widgets::{Block, BorderType, List, ListItem, ListState},
 };
 
 use crate::{
@@ -24,9 +24,10 @@ impl TicketList {
 }
 
 impl Component for TicketList {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect) {
+    fn render(&self, app: &App, frame: &mut Frame, area: Rect, dt: Duration) {
         let block = Block::bordered()
             .title(self.title.as_str())
+            .border_type(BorderType::Rounded)
             .border_style(Theme::border());
 
         if app.tickets.is_empty() {

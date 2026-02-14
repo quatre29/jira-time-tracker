@@ -1,12 +1,12 @@
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Rect},
-    style::{Color, Modifier, Stylize},
-    widgets::{Block, Clear},
+    style::{Color, Modifier, Style, Stylize},
+    widgets::{Block, BorderType, Clear},
 };
-use tachyonfx::{Duration as FxDuration, EffectRenderer, EffectTimer, Interpolation, fx};
+use tachyonfx::{Duration as FxDuration, EffectRenderer, fx};
 
 use crate::{
     app::App,
@@ -18,6 +18,7 @@ pub struct TimeInputDialog {
     border_color: Color,
     width: u16,
     height: u16,
+    animation_start_time: Instant,
 }
 
 impl TimeInputDialog {
@@ -27,6 +28,7 @@ impl TimeInputDialog {
             border_color: Theme::default_border_color(),
             width: 60,
             height: 10,
+            animation_start_time: Instant::now(),
         }
     }
 
@@ -61,7 +63,7 @@ impl TimeInputDialog {
 }
 
 impl Component for TimeInputDialog {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect) {
+    fn render(&self, app: &App, frame: &mut Frame, area: Rect, dt: Duration) {
         let area = self.centered_rect(self.width, self.height, area);
 
         frame.render_widget(Clear, area);
@@ -69,19 +71,18 @@ impl Component for TimeInputDialog {
         let block = Block::bordered()
             .title(self.title.as_str().add_modifier(Modifier::BOLD))
             .title_alignment(Alignment::Center)
-            .border_style(Theme::border());
+            .border_type(BorderType::Rounded)
+            .border_style(self.border_color);
 
-        let mut slide_effect = fx::slide_in(
-            tachyonfx::Motion::UpToDown,
-            100,
-            50,
-            Color::Cyan,
-            EffectTimer::from_ms(300, Interpolation::CubicOut),
+        let mut fade_effect = fx::coalesce_from(
+            Style::default(),
+            (1000, tachyonfx::Interpolation::ExpoInOut),
         );
 
-        // let duration = duration.as_millis();
-        frame.render_effect(&mut slide_effect, area, FxDuration::ZERO);
+        let duration =
+            FxDuration::from_millis(self.animation_start_time.elapsed().as_millis() as u32);
 
         frame.render_widget(block, area);
+        frame.render_effect(&mut fade_effect, area, duration);
     }
 }

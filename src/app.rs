@@ -1,10 +1,9 @@
+use std::io;
 use std::time::{Duration, Instant};
-use std::{io, sync::mpsc};
 
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event as CEvent, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{DefaultTerminal, Frame};
 
-use crate::events::Event;
 use crate::jira::models::JiraTicket;
 use crate::ui::components::TimeInputDialog;
 
@@ -18,7 +17,6 @@ pub struct App {
     pub tickets: Vec<JiraTicket>,
     pub selected_idx: Option<usize>,
     pub popup: PopupState,
-    pub last_frame: Instant,
 }
 
 impl App {
@@ -29,7 +27,6 @@ impl App {
             tickets,
             selected_idx: Some(0),
             popup: PopupState::None,
-            last_frame: Instant::now(),
         }
     }
 
@@ -41,61 +38,34 @@ impl App {
         self.popup = PopupState::None;
     }
 
-    pub fn run(
-        &mut self,
-        terminal: &mut DefaultTerminal,
-        rx: mpsc::Receiver<Event>,
-    ) -> io::Result<()> {
-        let tick_rate = std::time::Duration::from_millis(30); // ~30 FPS
-
-        // while !self.exit {
-        //     terminal.draw(|frame| self.draw(frame))?;
-        //
-        //     // TODO: Move to events.rs ??
-        //     // TODO: Handle unwrap() with custom errors!
-        //     match rx.recv_timeout(tick_rate).unwrap() {
-        //         Event::Input(key_event) => self.handle_key_event(key_event)?,
-        //     }
-        // }
-
-        // while !self.exit {
-        //     let now = Instant::now();
-        //     let dt = now - self.last_frame;
-        //     self.last_frame = now;
-        //
-        //     terminal.draw(|f| self.draw(f, dt))?;
-        //
-        //     // Use recv_timeout instead of recv
-        //     match rx.recv_timeout(tick_rate) {
-        //         Ok(Event::Input(key)) => self.handle_key_event(key)?,
-        //         Err(mpsc::RecvTimeoutError::Timeout) => {
-        //             // This "tick" allows the screen to re-draw and advance animations
-        //         }
-        //         Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e)),
-        //     }
-        // }
+    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+        let tick_rate = std::time::Duration::from_millis(16); // ~60 FPS
+        let mut last_frame = Instant::now();
 
         while !self.exit {
             let now = Instant::now();
-            let dt = now - self.last_frame;
-            self.last_frame = now;
+            let dt = now - last_frame;
+            last_frame = now;
 
-            terminal.draw(|f| self.draw(f))?;
+            // TODO: find if delta time is needed (dt)
+            terminal.draw(|f| self.draw(f, dt))?;
 
-            while let Ok(event) = rx.try_recv() {
-                match event {
-                    Event::Input(key_event) => self.handle_key_event(key_event)?,
+            let timeout = tick_rate
+                .checked_sub(last_frame.elapsed())
+                .unwrap_or(Duration::ZERO);
+
+            if event::poll(timeout)? {
+                if let CEvent::Key(key) = event::read()? {
+                    self.handle_key_event(key)?;
                 }
             }
-
-            std::thread::sleep(tick_rate);
         }
 
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
-        crate::ui::render(frame, self);
+    fn draw(&self, frame: &mut Frame, dt: Duration) {
+        crate::ui::render(frame, self, dt);
     }
 
     fn selected_ticket(&self) -> Option<&JiraTicket> {
