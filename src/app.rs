@@ -5,7 +5,7 @@ use crossterm::event::{self, Event as CEvent, KeyCode, KeyEvent, KeyEventKind};
 use ratatui::{DefaultTerminal, Frame};
 
 use crate::jira::models::JiraTicket;
-use crate::ui::components::TimeInputDialog;
+use crate::ui::components::{ComponentName, TimeInputDialog};
 
 pub enum PopupState {
     None,
@@ -17,6 +17,7 @@ pub struct App {
     pub tickets: Vec<JiraTicket>,
     pub selected_idx: Option<usize>,
     pub popup: PopupState,
+    pub focused: ComponentName,
 }
 
 impl App {
@@ -27,6 +28,7 @@ impl App {
             tickets,
             selected_idx: Some(0),
             popup: PopupState::None,
+            focused: ComponentName::default(),
         }
     }
 
@@ -62,6 +64,14 @@ impl App {
         }
 
         Ok(())
+    }
+
+    pub fn is_focused(&self, component_name: &ComponentName) -> bool {
+        &self.focused == component_name
+    }
+
+    pub fn focus(&mut self, component_name: ComponentName) {
+        self.focused = component_name;
     }
 
     fn draw(&self, frame: &mut Frame, dt: Duration) {

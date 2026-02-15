@@ -15,3 +15,5 @@ serde_json = "1.0.149"
 tachyonfx = "0.24.0"
 thiserror = "2.0.18"
 tokio = "1.49.0"
+tui-piechart = {git = "https://github.com/matthewhaynesonline/tui-piechart.git", branch = "ratatui-v30"}
+tui-textarea = "0.7.0"
