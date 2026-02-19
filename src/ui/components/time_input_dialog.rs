@@ -10,10 +10,14 @@ use tachyonfx::{Duration as FxDuration, EffectRenderer, fx};
 
 use crate::{
     app::App,
-    ui::{components::Component, theme::Theme},
+    ui::{
+        components::{Component, input::Input},
+        theme::Theme,
+    },
 };
 
-pub struct TimeInputDialog {
+pub struct TimeInputDialog<'a> {
+    pub time_input_textarea: Input<'a>,
     title: String,
     border_color: Color,
     width: u16,
@@ -21,14 +25,15 @@ pub struct TimeInputDialog {
     animation_start_time: Instant,
 }
 
-impl TimeInputDialog {
+impl<'a> TimeInputDialog<'a> {
     pub fn new(title: impl Into<String>) -> Self {
         Self {
             title: title.into(),
             border_color: Theme::default_border_color(),
-            width: 60,
-            height: 10,
+            width: 40,
+            height: 30,
             animation_start_time: Instant::now(),
+            time_input_textarea: Input::new("Iput time - Jira Format").placeholder_text("2h30m"),
         }
     }
 
@@ -60,11 +65,31 @@ impl TimeInputDialog {
 
         center
     }
+
+    fn centered_rect_percent(&self, percent_x: u16, percent_y: u16, area: Rect) -> Rect {
+        let vertical = Layout::vertical([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ]);
+
+        let horizontal = Layout::horizontal([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ]);
+
+        let [_, middle, _] = vertical.areas(area);
+        let [_, center, _] = horizontal.areas(middle);
+
+        center
+    }
 }
 
-impl Component for TimeInputDialog {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect, dt: Duration) {
-        let area = self.centered_rect(self.width, self.height, area);
+// FIXME: the structure of rendering stuff inside the input dialog popup is chaotic
+impl<'a> Component for TimeInputDialog<'a> {
+    fn render(&self, _app: &App, frame: &mut Frame, area: Rect, _dt: Duration) {
+        let area = self.centered_rect_percent(self.width, self.height, area);
 
         frame.render_widget(Clear, area);
 
@@ -73,6 +98,10 @@ impl Component for TimeInputDialog {
             .title_alignment(Alignment::Center)
             .border_type(BorderType::Rounded)
             .border_style(self.border_color);
+
+        let inner_area = block.inner(area);
+
+        frame.render_widget(self.time_input_textarea.textarea.widget(), inner_area);
 
         let mut fade_effect = fx::coalesce_from(
             Style::default(),

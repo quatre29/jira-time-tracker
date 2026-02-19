@@ -1,26 +1,26 @@
 use std::io;
 use std::time::{Duration, Instant};
 
-use crossterm::event::{self, Event as CEvent, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{self, Event as CEvent, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{DefaultTerminal, Frame};
 
 use crate::jira::models::JiraTicket;
 use crate::ui::components::{ComponentName, TimeInputDialog};
 
-pub enum PopupState {
+pub enum PopupState<'a> {
     None,
-    InputTime(TimeInputDialog),
+    InputTime(Box<TimeInputDialog<'a>>),
 }
 
-pub struct App {
+pub struct App<'a> {
     pub exit: bool,
     pub tickets: Vec<JiraTicket>,
     pub selected_idx: Option<usize>,
-    pub popup: PopupState,
+    pub popup: PopupState<'a>,
     pub focused: ComponentName,
 }
 
-impl App {
+impl<'a> App<'a> {
     // TODO: Read the tickets straight from storage.rs
     pub fn new(tickets: Vec<JiraTicket>) -> Self {
         Self {
@@ -33,7 +33,7 @@ impl App {
     }
 
     pub fn show_time_input_dialog(&mut self, title: &str) {
-        self.popup = PopupState::InputTime(TimeInputDialog::new(title));
+        self.popup = PopupState::InputTime(Box::new(TimeInputDialog::new(title)));
     }
 
     pub fn close_popup(&mut self) {
@@ -111,15 +111,27 @@ impl App {
             return Ok(());
         }
 
-        match &mut self.popup {
-            PopupState::InputTime(dialog) => match key_event.code {
-                KeyCode::Esc => self.close_popup(),
-                _ => {}
-            },
-            PopupState::None => {}
+        //NOTE: FORCE QUIT
+        if key_event.code == KeyCode::Char('c')
+            && key_event.modifiers.contains(KeyModifiers::CONTROL)
+        {
+            self.exit = true;
+
+            return Ok(());
         }
 
-        match key_event.code {
+        match self.focused {
+            ComponentName::TicketList => self.handle_ticket_list_keys(key_event)?,
+            ComponentName::InputDialog => self.handle_popup_keys(key_event)?,
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    // TODO: This should be handled by its Component
+    fn handle_ticket_list_keys(&mut self, key: KeyEvent) -> io::Result<()> {
+        match key.code {
             KeyCode::Char('q') => self.exit = true,
             KeyCode::Up => {
                 if let PopupState::None = self.popup {
@@ -135,13 +147,32 @@ impl App {
                 let selected_ticket = self.selected_ticket();
 
                 if let Some(selected_ticket) = selected_ticket {
-                    // TODO: fix this lifetime hack - clone().as_str()
-                    // we might need to pass the ticket ---- or maybe we can get the ticket details
-                    // from the popup::app.selected_ticket()
                     self.show_time_input_dialog(selected_ticket.branch_name.clone().as_str());
+                    self.focus(ComponentName::InputDialog);
                 }
             }
             _ => {}
+        }
+
+        Ok(())
+    }
+
+    // TODO: This should be handled by its Component
+    fn handle_popup_keys(&mut self, key: KeyEvent) -> io::Result<()> {
+        match &mut self.popup {
+            PopupState::InputTime(dialog) => match key.code {
+                KeyCode::Esc => {
+                    self.close_popup();
+                    self.focus(ComponentName::TicketList);
+                }
+                KeyCode::Enter => {
+                    // TODO: Log time | Validate input -> Error || POST
+                }
+                _ => {
+                    dialog.time_input_textarea.textarea.input(key);
+                }
+            },
+            PopupState::None => {}
         }
 
         Ok(())
