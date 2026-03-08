@@ -12,8 +12,7 @@ pub fn render_matrix_rain(
     frame: &mut Frame,
     tick: u64,
     area: Rect,
-    // TODO:  Add correct occluders on the app
-    // occluder: Rect,
+    occluders: &[Rect],
     col_step: u64,
     rain_speed: f32,
     rain_trail: i64,
@@ -22,7 +21,7 @@ pub fn render_matrix_rain(
         frame,
         tick,
         area,
-        // occluder,
+        occluders,
         col_step,
         Color::Rgb(0x00, 0xff, 0x00),
         rain_speed,
@@ -35,7 +34,7 @@ fn render_matrix_rain_colored(
     frame: &mut Frame,
     tick: u64,
     area: Rect,
-    // occluder: Rect,
+    occluders: &[Rect],
     col_step: u64,
     color: Color,
     rain_speed: f32,
@@ -108,14 +107,12 @@ fn render_matrix_rain_colored(
             let x = area.x + (col as u16);
             let y = area.y + (row as u16);
 
-            // // Skip rendering inside the card area
-            // if x >= occluder.x
-            //     && x < occluder.x + occluder.width
-            //     && y >= occluder.y
-            //     && y < occluder.y + occluder.height
-            // {
-            //     continue;
-            // }
+            // Skip rain inside panels
+            if occluders.iter().any(|rect| {
+                x >= rect.x && x < rect.x + rect.width && y >= rect.y && y < rect.y + rect.height
+            }) {
+                continue;
+            }
 
             frame.render_widget(
                 Paragraph::new(Span::styled(

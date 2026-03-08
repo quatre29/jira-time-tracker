@@ -47,7 +47,7 @@ impl<'a> App<'a> {
     }
 
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        let tick_rate = std::time::Duration::from_millis(45); // ~60 FPS
+        let tick_rate = std::time::Duration::from_millis(45);
         let mut last_tick = Instant::now();
 
         while !self.exit {
@@ -67,7 +67,7 @@ impl<'a> App<'a> {
                 }
             }
 
-            if last_tick.elapsed() >= tick_rate {
+            if dt >= tick_rate {
                 self.on_tick();
                 last_tick = Instant::now();
             }

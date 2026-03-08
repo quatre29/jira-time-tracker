@@ -3,6 +3,7 @@ use std::time::Duration;
 use ratatui::{
     Frame,
     layout::Rect,
+    style::{Color, Style},
     widgets::{Block, BorderType, List, ListItem, ListState},
 };
 
@@ -24,11 +25,12 @@ impl TicketList {
 }
 
 impl Component for TicketList {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect, dt: Duration) {
+    fn render(&self, app: &App, frame: &mut Frame, area: Rect, _dt: Duration) {
         let block = Block::bordered()
             .title(self.title.as_str())
             .border_type(BorderType::Rounded)
-            .border_style(Theme::border());
+            .border_style(Theme::border())
+            .style(Style::default().bg(Color::Rgb(0x06, 0x06, 0x0a)));
 
         if app.tickets.is_empty() {
             let empty = ratatui::widgets::Paragraph::new("No tickets found")

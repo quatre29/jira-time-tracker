@@ -3,10 +3,10 @@ use std::time::Duration;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     widgets::{Block, BorderType, Borders, Paragraph, Widget},
 };
-use tui_piechart::{PieChart, PieSlice};
+use tui_piechart::{PieChart, PieSlice, border_style};
 
 use crate::{
     app::App,
@@ -23,16 +23,24 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
         Block::default().style(Style::default().bg(Color::Rgb(0x06, 0x06, 0x0a))),
         area,
     );
-    matrix_rain::render_matrix_rain(frame, app.tick, area, 1, 0.1, 24);
+
+    let horizontal = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Fill(1),
+            Constraint::Percentage(70),
+            Constraint::Fill(1),
+        ])
+        .split(area);
 
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
             Constraint::Percentage(10),
-            Constraint::Percentage(80),
-            Constraint::Percentage(10),
+            Constraint::Percentage(70),
+            Constraint::Percentage(20),
         ])
-        .split(area);
+        .split(horizontal[1]);
 
     let body_layout = Layout::default()
         .direction(Direction::Horizontal)
@@ -44,47 +52,95 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
         .constraints(vec![Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(body_layout[1]);
 
+    let title_vertical_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
+        .split(outer_layout[0]);
+
+    let title_horizontal_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Fill(1),
+            Constraint::Percentage(30),
+            Constraint::Fill(1),
+        ])
+        .split(title_vertical_layout[1]);
+
+    let matrix_rain_ocluders = [
+        body_layout[0],
+        body_info_layout[0],
+        body_info_layout[1],
+        outer_layout[2],
+        title_horizontal_layout[1],
+    ];
+
+    matrix_rain::render_matrix_rain(frame, app.tick, area, &matrix_rain_ocluders, 1, 0.3, 24);
+
     frame.render_widget(
         Paragraph::new("Body 1").block(
             Block::new()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Rounded),
+                .border_type(BorderType::Rounded)
+                .border_style(
+                    Style::default()
+                        .fg(Color::Rgb(57, 255, 20))
+                        .add_modifier(Modifier::BOLD),
+                ),
         ),
         body_layout[0],
     );
 
     frame.render_widget(
-        Paragraph::new("Ticket Info").block(
+        Paragraph::new("Ticket Info").style(Color::Green).block(
             Block::new()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Rounded),
+                .border_type(BorderType::Rounded)
+                .border_style(
+                    Style::default()
+                        .fg(Color::Rgb(57, 255, 20))
+                        .add_modifier(Modifier::BOLD),
+                ),
         ),
         body_info_layout[0],
     );
 
     frame.render_widget(
-        Paragraph::new("User Info").block(
+        Paragraph::new("User Info").style(Color::Green).block(
             Block::new()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Rounded),
+                .border_type(BorderType::Rounded)
+                .border_style(
+                    Style::default()
+                        .fg(Color::Rgb(57, 255, 20))
+                        .add_modifier(Modifier::BOLD),
+                ),
         ),
         body_info_layout[1],
     );
     frame.render_widget(
-        Paragraph::new("Footer").block(
+        Paragraph::new("Footer").style(Color::Green).block(
             Block::new()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Rounded),
+                .border_type(BorderType::Rounded)
+                .border_style(
+                    Style::default()
+                        .fg(Color::Rgb(57, 255, 20))
+                        .add_modifier(Modifier::BOLD),
+                ),
         ),
         outer_layout[2],
     );
 
-    Header::new("Jira Time Tracker").render(app, frame, outer_layout[0], dt);
+    Header::new("Jira Time Tracker").render(app, frame, title_horizontal_layout[1], dt);
     TicketList::new().render(app, frame, body_layout[0], dt);
 
     let slices = vec![
-        PieSlice::new("Spent", 45.0, Color::Red),
-        PieSlice::new("Remaining", 55.0, Color::Blue),
+        PieSlice::new("Spent", 45.0, Color::Green),
+        PieSlice::new("Remaining", 55.0, Color::White),
     ];
 
     let pie_chart = PieChart::new(slices).high_resolution(true);
