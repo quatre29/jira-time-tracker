@@ -8,6 +8,7 @@ use crate::{
 };
 
 pub mod components;
+pub mod matrix_rain;
 pub mod pages;
 pub mod theme;
 pub mod time_entry;

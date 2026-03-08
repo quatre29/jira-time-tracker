@@ -18,6 +18,7 @@ pub struct App<'a> {
     pub selected_idx: Option<usize>,
     pub popup: PopupState<'a>,
     pub focused: ComponentName,
+    pub tick: u64,
 }
 
 impl<'a> App<'a> {
@@ -29,6 +30,7 @@ impl<'a> App<'a> {
             selected_idx: Some(0),
             popup: PopupState::None,
             focused: ComponentName::default(),
+            tick: 0,
         }
     }
 
@@ -40,26 +42,34 @@ impl<'a> App<'a> {
         self.popup = PopupState::None;
     }
 
+    pub fn on_tick(&mut self) {
+        self.tick = self.tick.wrapping_add(1)
+    }
+
     pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
-        let tick_rate = std::time::Duration::from_millis(16); // ~60 FPS
-        let mut last_frame = Instant::now();
+        let tick_rate = std::time::Duration::from_millis(45); // ~60 FPS
+        let mut last_tick = Instant::now();
 
         while !self.exit {
             let now = Instant::now();
-            let dt = now - last_frame;
-            last_frame = now;
+            let dt = now - last_tick;
 
             // TODO: find if delta time is needed (dt)
             terminal.draw(|f| self.draw(f, dt))?;
 
             let timeout = tick_rate
-                .checked_sub(last_frame.elapsed())
+                .checked_sub(last_tick.elapsed())
                 .unwrap_or(Duration::ZERO);
 
             if event::poll(timeout)? {
                 if let CEvent::Key(key) = event::read()? {
                     self.handle_key_event(key)?;
                 }
+            }
+
+            if last_tick.elapsed() >= tick_rate {
+                self.on_tick();
+                last_tick = Instant::now();
             }
         }
 
@@ -122,7 +132,7 @@ impl<'a> App<'a> {
 
         match self.focused {
             ComponentName::TicketList => self.handle_ticket_list_keys(key_event)?,
-            ComponentName::InputDialog => self.handle_popup_keys(key_event)?,
+            ComponentName::TimeInputDialog => self.handle_popup_keys(key_event)?,
             _ => {}
         }
 
@@ -148,7 +158,7 @@ impl<'a> App<'a> {
 
                 if let Some(selected_ticket) = selected_ticket {
                     self.show_time_input_dialog(selected_ticket.branch_name.clone().as_str());
-                    self.focus(ComponentName::InputDialog);
+                    self.focus(ComponentName::TimeInputDialog);
                 }
             }
             _ => {}

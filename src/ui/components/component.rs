@@ -9,7 +9,7 @@ pub enum ComponentName {
     Header,
     #[default]
     TicketList,
-    InputDialog,
+    TimeInputDialog,
 }
 
 pub trait Component {

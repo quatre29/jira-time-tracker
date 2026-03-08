@@ -3,18 +3,27 @@ use std::time::Duration;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
-    style::Color,
+    style::{Color, Style},
     widgets::{Block, BorderType, Borders, Paragraph, Widget},
 };
 use tui_piechart::{PieChart, PieSlice};
 
 use crate::{
     app::App,
-    ui::components::{Component, Header, TicketList},
+    ui::{
+        components::{Component, Header, TicketList},
+        matrix_rain,
+    },
 };
 
 pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
     let area = frame.area();
+
+    frame.render_widget(
+        Block::default().style(Style::default().bg(Color::Rgb(0x06, 0x06, 0x0a))),
+        area,
+    );
+    matrix_rain::render_matrix_rain(frame, app.tick, area, 1, 0.1, 24);
 
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
