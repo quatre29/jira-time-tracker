@@ -1,9 +1,11 @@
 use std::time::Duration;
 
+use color_eyre::owo_colors::OwoColorize;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
+    text::Span,
     widgets::{Block, BorderType, Borders, Paragraph, Widget},
 };
 use tui_piechart::{PieChart, PieSlice, border_style};
@@ -13,6 +15,7 @@ use crate::{
     ui::{
         components::{Component, Header, TicketList},
         matrix_rain,
+        theme::Theme,
     },
 };
 
@@ -87,7 +90,7 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
                 .border_type(BorderType::Rounded)
                 .border_style(
                     Style::default()
-                        .fg(Color::Rgb(57, 255, 20))
+                        .fg(Theme::default_border_color())
                         .add_modifier(Modifier::BOLD),
                 ),
         ),
@@ -95,43 +98,50 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
     );
 
     frame.render_widget(
-        Paragraph::new("Ticket Info").style(Color::Green).block(
-            Block::new()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded)
-                .border_style(
-                    Style::default()
-                        .fg(Color::Rgb(57, 255, 20))
-                        .add_modifier(Modifier::BOLD),
-                ),
-        ),
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Plain)
+            .border_style(Style::default().fg(Theme::default_border_color()))
+            .title(Span::styled(
+                "Ticket Info",
+                Style::default()
+                    .fg(Theme::primary_color())
+                    .bg(Theme::panel_background())
+                    .add_modifier(Modifier::BOLD),
+            ))
+            .style(Style::default().bg(Theme::panel_background())),
         body_info_layout[0],
     );
 
     frame.render_widget(
-        Paragraph::new("User Info").style(Color::Green).block(
-            Block::new()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded)
-                .border_style(
-                    Style::default()
-                        .fg(Color::Rgb(57, 255, 20))
-                        .add_modifier(Modifier::BOLD),
-                ),
-        ),
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Plain)
+            .border_style(Style::default().fg(Theme::default_border_color()))
+            .title(Span::styled(
+                "User Info",
+                Style::default()
+                    .fg(Theme::primary_color())
+                    .bg(Theme::panel_background())
+                    .add_modifier(Modifier::BOLD),
+            ))
+            .style(Style::default().bg(Theme::panel_background())),
         body_info_layout[1],
     );
+
     frame.render_widget(
-        Paragraph::new("Footer").style(Color::Green).block(
-            Block::new()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded)
-                .border_style(
-                    Style::default()
-                        .fg(Color::Rgb(57, 255, 20))
-                        .add_modifier(Modifier::BOLD),
-                ),
-        ),
+        Block::default()
+            .borders(Borders::ALL)
+            .border_type(BorderType::Plain)
+            .border_style(Style::default().fg(Theme::default_border_color()))
+            .title(Span::styled(
+                "Footer",
+                Style::default()
+                    .fg(Theme::primary_color())
+                    .bg(Theme::panel_background())
+                    .add_modifier(Modifier::BOLD),
+            ))
+            .style(Style::default().bg(Theme::panel_background())),
         outer_layout[2],
     );
 
