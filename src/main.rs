@@ -1,12 +1,12 @@
 use std::io;
 
+use api::models::JiraTicket;
 use app::App;
-use jira::models::JiraTicket;
 
+mod api;
 mod app;
 mod error;
 mod events;
-mod jira;
 mod storage;
 mod time;
 mod ui;

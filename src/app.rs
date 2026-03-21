@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 use crossterm::event::{self, Event as CEvent, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{DefaultTerminal, Frame};
 
-use crate::jira::models::JiraTicket;
+use crate::api::models::JiraTicket;
 use crate::ui::components::{ComponentName, TimeInputDialog};
 
 pub enum PopupState<'a> {
