@@ -1,11 +1,32 @@
+use std::{
+    env,
+    path::{Path, PathBuf},
+};
+
 use crate::Result;
 
-#[derive(Clone, Copy)]
-pub struct Storage;
+#[derive(Clone)]
+pub struct Storage {
+    ticket_keys_path: PathBuf,
+    ticket_keys_tmp_path: PathBuf,
+}
 
 impl Storage {
+    pub fn new() -> Self {
+        let mut ticket_keys_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let mut ticket_keys_tmp_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+
+        ticket_keys_path.push("src/storage/ticket_keys_storage.json");
+        ticket_keys_tmp_path.push("src/storage/ticket_keys_storage.tmp");
+
+        Self {
+            ticket_keys_path,
+            ticket_keys_tmp_path,
+        }
+    }
+
     pub fn load_ticket_keys(&self) -> Result<Vec<String>> {
-        let data = match std::fs::read_to_string("src/storage/ticket_keys_storage.json") {
+        let data = match std::fs::read_to_string(&self.ticket_keys_path) {
             Ok(key) => key,
             Err(_) => return Ok(vec![]),
         };
@@ -40,8 +61,8 @@ impl Storage {
     fn save_ticket_keys(&self, keys: &[String]) -> Result<()> {
         let json = serde_json::to_string_pretty(keys)?;
 
-        let tmp_path = "src/storage/ticket_keys_storage.tmp";
-        let final_path = "src/storage/ticket_keys_storage.json";
+        let tmp_path = &self.ticket_keys_tmp_path;
+        let final_path = &self.ticket_keys_path;
 
         std::fs::write(tmp_path, json)?;
         let _ = std::fs::rename(tmp_path, final_path);

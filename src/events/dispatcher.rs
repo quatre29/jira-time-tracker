@@ -1,11 +1,13 @@
-use futures::{SinkExt, channel::mpsc::Sender};
+// use futures::{SinkExt, channel::mpsc::Sender};
 use reqwest::Client;
+use tokio::sync::mpsc::Sender;
 
 use crate::{
     api::{
         config::JiraConfig,
         jira_client::{self, JiraClient},
     },
+    app,
     events::app_event::{ActionEvent, AppEvent},
     storage::storage::Storage,
 };
@@ -34,15 +36,27 @@ use crate::{
 
 pub fn dispatch(
     data_event: ActionEvent,
-    mut app_tx: Sender<AppEvent>,
-    _storage: &Storage,
-    client: JiraClient,
+    app_tx: Sender<AppEvent>,
+    storage: &Storage,
+    client: &JiraClient,
 ) {
+    let client = client.clone();
+    let app_tx = app_tx.clone();
+    let storage = storage.clone();
+
     match data_event {
         ActionEvent::FetchTickets => {
             tokio::spawn(async move {
-                // TODO: we need to pass storage from outside
-                match client.fetch_tickets(vec![String::from("")]).await {
+                let ticket_keys = match storage.load_ticket_keys() {
+                    Ok(keys) => keys,
+                    Err(err) => {
+                        _ = app_tx.send(AppEvent::ApiError(err.to_string())).await;
+
+                        return;
+                    }
+                };
+
+                match client.fetch_tickets(ticket_keys).await {
                     Ok(tickets) => {
                         let _ = app_tx.send(AppEvent::TicketsLoaded(tickets)).await;
                     }

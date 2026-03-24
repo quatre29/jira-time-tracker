@@ -3,11 +3,14 @@ use std::time::{Duration, Instant};
 
 use crossterm::event::{Event as CEvent, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{DefaultTerminal, Frame};
-use tokio::sync::mpsc::Receiver;
+use tokio::sync::mpsc::{Receiver, Sender};
 
+use crate::api::config::JiraConfig;
 use crate::api::jira_client::JiraClient;
 use crate::api::models::JiraTicket;
+use crate::events::app_event::ActionEvent;
 use crate::events::app_event::AppEvent;
+use crate::events::dispatcher::dispatch;
 use crate::storage::storage::Storage;
 use crate::ui::components::{ComponentName, TimeInputDialog};
 
@@ -26,13 +29,24 @@ pub struct App<'a> {
     pub error: Option<String>,
     pub storage: Storage,
     pub jira_client: JiraClient,
+    pub app_tx: Sender<AppEvent>,
 }
 
 impl<'a> App<'a> {
-    pub fn new(tickets: Vec<JiraTicket>, storage: Storage, jira_client: JiraClient) -> Self {
+    pub fn new(app_tx: Sender<AppEvent>) -> Self {
+        let storage = Storage::new();
+        let jira_client = JiraClient::new(JiraConfig::from_env());
+
+        dispatch(
+            ActionEvent::FetchTickets,
+            app_tx.clone(),
+            &storage,
+            &jira_client,
+        );
+
         Self {
             exit: false,
-            tickets,
+            tickets: vec![],
             selected_idx: Some(0),
             popup: PopupState::None,
             focused: ComponentName::default(),
@@ -40,6 +54,7 @@ impl<'a> App<'a> {
             error: None,
             storage,
             jira_client,
+            app_tx,
         }
     }
 
@@ -70,16 +85,6 @@ impl<'a> App<'a> {
             // TODO: find if delta time is needed (dt)
             terminal.draw(|f| self.draw(f, dt))?;
 
-            // let timeout = tick_rate
-            //     .checked_sub(last_tick.elapsed())
-            //     .unwrap_or(Duration::ZERO);
-
-            // if event::poll(timeout)? {
-            //     if let CEvent::Key(key) = event::read()? {
-            //         self.handle_key_event(key)?;
-            //     }
-            // }
-
             tokio::select! {
                 Some(event) = app_rx.recv() => {
                     self.handle_event(event).await?;
@@ -89,11 +94,6 @@ impl<'a> App<'a> {
                         self.on_tick();
                     }
             }
-
-            // if dt >= tick_rate {
-            //     self.on_tick();
-            //     last_tick = Instant::now();
-            // }
         }
 
         Ok(())

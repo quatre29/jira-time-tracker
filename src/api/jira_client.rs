@@ -6,7 +6,6 @@ use super::JiraConfig;
 use super::dto::*;
 use crate::Result;
 use crate::api::models::{JiraTicket, JiraUser};
-use crate::storage::storage::Storage;
 
 #[derive(Clone)]
 pub struct JiraClient {
@@ -49,8 +48,6 @@ impl JiraClient {
     }
 
     pub async fn fetch_tickets(&self, keys: Vec<String>) -> Result<Vec<JiraTicket>> {
-        // let keys = self.load_ticket_keys()?;
-        println!("{:#?} keyyyys", keys );
         if keys.is_empty() {
             return Ok(vec![]);
         }
@@ -98,17 +95,5 @@ impl JiraClient {
 
     pub async fn log_time(&self, ticket_id: String, time: u32) -> Result<JiraTicket> {
         todo!()
-    }
-
-    // TODO: Remove when we pass storage from outside
-    pub fn load_ticket_keys(&self) -> Result<Vec<String>> {
-        let data = match std::fs::read_to_string("storage/tickets.json") {
-            Ok(key) => key,
-            Err(_) => return Ok(vec![]),
-        };
-
-        let keys: Vec<String> = serde_json::from_str(&data)?;
-
-        Ok(keys)
     }
 }
