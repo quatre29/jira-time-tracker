@@ -4,16 +4,21 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+base64 = "0.22.1"
 chrono = "0.4.43"
 clap = "4.5.57"
 color-eyre = "0.6.5"
-crossterm = "0.29.0"
+crossterm = {version = "0.29.0", features = ["event-stream"]}
+derive_more = { version = "2.1.1", features = ["full"] }
+dotenvy = "0.15.7"
+futures = "0.3.32"
+futures-timer = "3.0.3"
 ratatui = "0.30.0"
-reqwest = "0.13.1"
-serde = "1.0.228"
+reqwest = { version = "0.13.1", features = ["json"] }
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 tachyonfx = "0.24.0"
 thiserror = "2.0.18"
-tokio = "1.49.0"
+tokio = { version = "1.50.0", features = ["full"] }
 tui-piechart = {git = "https://github.com/matthewhaynesonline/tui-piechart.git", branch = "ratatui-v30"}
 tui-textarea-2 = "0.9.1"

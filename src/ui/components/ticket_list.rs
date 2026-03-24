@@ -54,7 +54,7 @@ impl Component for TicketList {
             .tickets
             .iter()
             .map(|ticket| {
-                let content = format!("{} - {}", ticket.branch_name, ticket.description);
+                let content = format!("{} - {}", ticket.key, ticket.title);
 
                 ListItem::new(content)
             })

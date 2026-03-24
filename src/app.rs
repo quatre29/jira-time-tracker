@@ -1,10 +1,14 @@
 use std::io;
 use std::time::{Duration, Instant};
 
-use crossterm::event::{self, Event as CEvent, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use crossterm::event::{Event as CEvent, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{DefaultTerminal, Frame};
+use tokio::sync::mpsc::Receiver;
 
+use crate::api::jira_client::JiraClient;
 use crate::api::models::JiraTicket;
+use crate::events::app_event::AppEvent;
+use crate::storage::storage::Storage;
 use crate::ui::components::{ComponentName, TimeInputDialog};
 
 pub enum PopupState<'a> {
@@ -19,11 +23,13 @@ pub struct App<'a> {
     pub popup: PopupState<'a>,
     pub focused: ComponentName,
     pub tick: u64,
+    pub error: Option<String>,
+    pub storage: Storage,
+    pub jira_client: JiraClient,
 }
 
 impl<'a> App<'a> {
-    // TODO: Read the tickets straight from storage.rs
-    pub fn new(tickets: Vec<JiraTicket>) -> Self {
+    pub fn new(tickets: Vec<JiraTicket>, storage: Storage, jira_client: JiraClient) -> Self {
         Self {
             exit: false,
             tickets,
@@ -31,6 +37,9 @@ impl<'a> App<'a> {
             popup: PopupState::None,
             focused: ComponentName::default(),
             tick: 0,
+            error: None,
+            storage,
+            jira_client,
         }
     }
 
@@ -46,7 +55,11 @@ impl<'a> App<'a> {
         self.tick = self.tick.wrapping_add(1)
     }
 
-    pub fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+    pub async fn run(
+        &mut self,
+        terminal: &mut DefaultTerminal,
+        mut app_rx: Receiver<AppEvent>,
+    ) -> io::Result<()> {
         let tick_rate = std::time::Duration::from_millis(45);
         let mut last_tick = Instant::now();
 
@@ -57,20 +70,63 @@ impl<'a> App<'a> {
             // TODO: find if delta time is needed (dt)
             terminal.draw(|f| self.draw(f, dt))?;
 
-            let timeout = tick_rate
-                .checked_sub(last_tick.elapsed())
-                .unwrap_or(Duration::ZERO);
+            // let timeout = tick_rate
+            //     .checked_sub(last_tick.elapsed())
+            //     .unwrap_or(Duration::ZERO);
 
-            if event::poll(timeout)? {
-                if let CEvent::Key(key) = event::read()? {
-                    self.handle_key_event(key)?;
+            // if event::poll(timeout)? {
+            //     if let CEvent::Key(key) = event::read()? {
+            //         self.handle_key_event(key)?;
+            //     }
+            // }
+
+            tokio::select! {
+                Some(event) = app_rx.recv() => {
+                    self.handle_event(event).await?;
                 }
+
+                _ = tokio::time::sleep(tick_rate) => {
+                        self.on_tick();
+                    }
             }
 
-            if dt >= tick_rate {
-                self.on_tick();
-                last_tick = Instant::now();
+            // if dt >= tick_rate {
+            //     self.on_tick();
+            //     last_tick = Instant::now();
+            // }
+        }
+
+        Ok(())
+    }
+
+    pub async fn handle_event(&mut self, event: AppEvent) -> io::Result<()> {
+        match event {
+            AppEvent::KeyEvent(CEvent::Key(key)) => self.handle_key_event(key)?,
+
+            AppEvent::TicketsLoaded(tickets) => {
+                self.tickets = tickets;
+                self.selected_idx = Some(0);
             }
+
+            AppEvent::TicketLoaded(ticket) => {
+                todo!()
+            }
+
+            AppEvent::TimeLogged(ticket) => {
+                todo!()
+            }
+
+            AppEvent::UserLoaded(user) => {
+                todo!()
+            }
+
+            AppEvent::Tick => {
+                self.on_tick();
+            }
+
+            AppEvent::ApiError(err) => self.error = Some(err),
+
+            _ => {}
         }
 
         Ok(())
@@ -157,7 +213,7 @@ impl<'a> App<'a> {
                 let selected_ticket = self.selected_ticket();
 
                 if let Some(selected_ticket) = selected_ticket {
-                    self.show_time_input_dialog(selected_ticket.branch_name.clone().as_str());
+                    self.show_time_input_dialog(&selected_ticket.title.clone().as_str());
                     self.focus(ComponentName::TimeInputDialog);
                 }
             }
