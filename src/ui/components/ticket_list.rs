@@ -12,6 +12,7 @@ use crate::{
     app::App,
     ui::{components::Component, theme::Theme},
 };
+use crate::app::LoadState;
 
 pub struct TicketList {
     title: String,
@@ -40,34 +41,48 @@ impl Component for TicketList {
             ))
             .style(Style::default().bg(Theme::panel_background()));
 
-        if app.tickets.is_empty() {
-            let empty = ratatui::widgets::Paragraph::new("No tickets found")
-                .block(block.clone())
-                .style(Theme::dimmed());
+        match &app.tickets_state {
+            LoadState::Loading => {
+                let loading = ratatui::widgets::Paragraph::new("Loading tickets...")
+                    .block(block)
+                    .style(Theme::dimmed());
 
-            frame.render_widget(empty, area);
+                frame.render_widget(loading, area);
+            },
+            LoadState::Loaded(tickets) => {
+                if tickets.is_empty() {
+                    let empty = ratatui::widgets::Paragraph::new("No tickets found")
+                        .block(block)
+                        .style(Theme::dimmed());
 
-            return;
+                    frame.render_widget(empty, area);
+                    return;
+                }
+
+                let items: Vec<ListItem> = tickets
+                    .iter()
+                    .map(|ticket| {
+                        ListItem::new(format!("{} - {}", ticket.key, ticket.title))
+                    })
+                    .collect();
+
+                let list = List::new(items)
+                    .highlight_style(Theme::selected())
+                    .highlight_symbol(">> ")
+                    .block(block);
+
+                let mut state = ListState::default();
+                state.select(app.selected_idx);
+
+                frame.render_stateful_widget(list, area, &mut state);
+            },
+            LoadState::Error(err) => {
+                let error = ratatui::widgets::Paragraph::new(err.clone())
+                    .block(block)
+                    .style(Style::default().fg(Color::Red));
+
+                frame.render_widget(error, area);
+            }
         }
-
-        let items: Vec<ListItem> = app
-            .tickets
-            .iter()
-            .map(|ticket| {
-                let content = format!("{} - {}", ticket.key, ticket.title);
-
-                ListItem::new(content)
-            })
-            .collect();
-
-        let list = List::new(items)
-            .highlight_style(Theme::selected())
-            .highlight_symbol(">> ")
-            .block(block);
-
-        let mut state = ListState::default();
-        state.select(app.selected_idx);
-
-        frame.render_stateful_widget(list, area, &mut state);
     }
 }

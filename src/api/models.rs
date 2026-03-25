@@ -1,32 +1,11 @@
-use chrono::{DateTime, Duration, Utc};
+use crate::api::dto::{JiraIssueDto, JiraUserDto};
 
-use crate::api::dto::JiraIssueDto;
-
-// pub struct JiraTicket {
-//     pub branch_name: String,
-//     pub description: String,
-//     pub logged_time: Duration,
-//     pub total_estimate: Duration,
-//     pub last_updated: DateTime<Utc>,
-// }
-//
-// impl JiraTicket {
-//     // NOTE:  we will update the rest of the fields when we get a response from jira api
-//     pub fn new(branch_name: &str, description: impl Into<String>) -> Self {
-//         Self {
-//             branch_name: branch_name.to_string(),
-//             //  NOTE: temp - this will be populated by Jira API
-//             description: description.into(),
-//             logged_time: Duration::zero(),
-//             total_estimate: Duration::zero(),
-//             last_updated: Utc::now(),
-//         }
-//     }
-// }
-//
 pub struct JiraUser {
-    pub username: String,
-    pub user_id: String,
+    pub account_id: String,
+    pub display_name: String,
+    pub email_address: String,
+    pub time_zone: String,
+    pub locale: String,
 }
 
 #[derive(Debug, Clone)]
@@ -85,3 +64,16 @@ impl From<JiraIssueDto> for JiraTicket {
         }
     }
 }
+
+impl From<JiraUserDto> for JiraUser {
+    fn from(dto: JiraUserDto) -> Self {
+        Self {
+            account_id: dto.account_id.unwrap_or_default(),
+            display_name: dto.display_name.unwrap_or_default(),
+            email_address: dto.email_address.unwrap_or_default(),
+            locale: dto.locale.unwrap_or_default(),
+            time_zone: dto.time_zone.unwrap_or_default(),
+        }
+    }
+}
+

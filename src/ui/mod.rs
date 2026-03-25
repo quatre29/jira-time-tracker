@@ -1,7 +1,5 @@
 use std::time::Duration;
-
 use ratatui::Frame;
-
 use crate::{
     app::{App, PopupState},
     ui::components::Component,

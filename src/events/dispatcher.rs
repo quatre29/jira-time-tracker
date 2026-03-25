@@ -1,38 +1,11 @@
-// use futures::{SinkExt, channel::mpsc::Sender};
-use reqwest::Client;
 use tokio::sync::mpsc::Sender;
-
 use crate::{
     api::{
-        config::JiraConfig,
-        jira_client::{self, JiraClient},
+        jira_client::{JiraClient},
     },
-    app,
     events::app_event::{ActionEvent, AppEvent},
     storage::storage::Storage,
 };
-
-// fn spawn_api_call<F, T, E, MapFn>(
-//     future: F,
-//     mut app_tx: Sender<AppEvent>,
-//     success: fn(T) -> AppEvent,
-// ) where
-//     F: Future<Output = Result<T, E>> + Send + 'static,
-//     T: Send + 'static,
-//     E: ToString + Send + 'static,
-//     MapFn: Fn(T) -> AppEvent + Send + 'static,
-// {
-//     tokio::spawn(async move {
-//         match future.await {
-//             Ok(data) => {
-//                 let _ = app_tx.send(success(data)).await;
-//             }
-//             Err(err) => {
-//                 let _ = app_tx.send(AppEvent::ApiError(err.to_string())).await;
-//             }
-//         }
-//     });
-// }
 
 pub fn dispatch(
     data_event: ActionEvent,
@@ -93,9 +66,9 @@ pub fn dispatch(
             });
         }
 
-        ActionEvent::FetchUser(user) => {
+        ActionEvent::FetchUser => {
             tokio::spawn(async move {
-                match client.fetch_user(user.user_id).await {
+                match client.fetch_user().await {
                     Ok(user) => {
                         let _ = app_tx.send(AppEvent::UserLoaded(user)).await;
                     }

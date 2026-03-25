@@ -1,14 +1,13 @@
 use std::time::Duration;
-
 use color_eyre::owo_colors::OwoColorize;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::Span,
-    widgets::{Block, BorderType, Borders, Paragraph, Widget},
+    widgets::{Block, BorderType, Borders, Paragraph},
 };
-use tui_piechart::{PieChart, PieSlice, border_style};
+use tui_piechart::{PieChart, PieSlice};
 
 use crate::{
     app::App,
@@ -18,6 +17,8 @@ use crate::{
         theme::Theme,
     },
 };
+use crate::ui::components::ticket_info::TicketInfo;
+use crate::ui::components::user_info::UserInfo;
 
 pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
     let area = frame.area();
@@ -73,7 +74,7 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
         ])
         .split(title_vertical_layout[1]);
 
-    let matrix_rain_ocluders = [
+    let matrix_rain_occluders = [
         body_layout[0],
         body_info_layout[0],
         body_info_layout[1],
@@ -81,7 +82,7 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
         title_horizontal_layout[1],
     ];
 
-    matrix_rain::render_matrix_rain(frame, app.tick, area, &matrix_rain_ocluders, 1, 0.3, 24);
+    matrix_rain::render_matrix_rain(frame, app.tick, area, &matrix_rain_occluders, 1, 0.3, 24);
 
     frame.render_widget(
         Paragraph::new("Body 1").block(
@@ -103,38 +104,6 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
             .border_type(BorderType::Plain)
             .border_style(Style::default().fg(Theme::default_border_color()))
             .title(Span::styled(
-                "Ticket Info",
-                Style::default()
-                    .fg(Theme::primary_color())
-                    .bg(Theme::panel_background())
-                    .add_modifier(Modifier::BOLD),
-            ))
-            .style(Style::default().bg(Theme::panel_background())),
-        body_info_layout[0],
-    );
-
-    frame.render_widget(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Plain)
-            .border_style(Style::default().fg(Theme::default_border_color()))
-            .title(Span::styled(
-                "User Info",
-                Style::default()
-                    .fg(Theme::primary_color())
-                    .bg(Theme::panel_background())
-                    .add_modifier(Modifier::BOLD),
-            ))
-            .style(Style::default().bg(Theme::panel_background())),
-        body_info_layout[1],
-    );
-
-    frame.render_widget(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Plain)
-            .border_style(Style::default().fg(Theme::default_border_color()))
-            .title(Span::styled(
                 "Footer",
                 Style::default()
                     .fg(Theme::primary_color())
@@ -147,6 +116,8 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
 
     Header::new("Jira Time Tracker").render(app, frame, title_horizontal_layout[1], dt);
     TicketList::new().render(app, frame, body_layout[0], dt);
+    UserInfo::new().render(app, frame, body_info_layout[1], dt);
+    TicketInfo::new().render(app, frame, body_info_layout[0], dt);
 
     let slices = vec![
         PieSlice::new("Spent", 45.0, Color::Green),

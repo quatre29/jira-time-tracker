@@ -33,3 +33,13 @@ pub struct TimeTrackingDto {
     pub original_estimate_seconds: Option<u64>,
     pub remaining_estimate_seconds: Option<u64>,
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JiraUserDto {
+    pub account_id: Option<String>,
+    pub display_name: Option<String>,
+    pub time_zone: Option<String>,
+    pub locale: Option<String>,
+    pub email_address: Option<String>,
+}

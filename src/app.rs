@@ -7,7 +7,8 @@ use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::api::config::JiraConfig;
 use crate::api::jira_client::JiraClient;
-use crate::api::models::JiraTicket;
+use crate::api::models::{JiraTicket, JiraUser};
+use crate::app::LoadState::{Loaded, Loading};
 use crate::events::app_event::ActionEvent;
 use crate::events::app_event::AppEvent;
 use crate::events::dispatcher::dispatch;
@@ -19,17 +20,25 @@ pub enum PopupState<'a> {
     InputTime(Box<TimeInputDialog<'a>>),
 }
 
+pub enum LoadState<T> {
+    Loading,
+    Loaded(T),
+    Error(String),
+}
+
 pub struct App<'a> {
     pub exit: bool,
-    pub tickets: Vec<JiraTicket>,
     pub selected_idx: Option<usize>,
     pub popup: PopupState<'a>,
     pub focused: ComponentName,
-    pub tick: u64,
-    pub error: Option<String>,
+    // pub error: Option<String>,
     pub storage: Storage,
     pub jira_client: JiraClient,
     pub app_tx: Sender<AppEvent>,
+    pub tick: u64,
+
+    pub tickets_state: LoadState<Vec<JiraTicket>>,
+    pub user_state: LoadState<JiraUser>,
 }
 
 impl<'a> App<'a> {
@@ -44,17 +53,47 @@ impl<'a> App<'a> {
             &jira_client,
         );
 
+        dispatch(
+            ActionEvent::FetchUser,
+            app_tx.clone(),
+            &storage,
+            &jira_client
+        );
+
         Self {
             exit: false,
-            tickets: vec![],
             selected_idx: Some(0),
             popup: PopupState::None,
             focused: ComponentName::default(),
             tick: 0,
-            error: None,
+            // error: None,
             storage,
             jira_client,
             app_tx,
+
+            tickets_state: Loading,
+            user_state: Loading,
+        }
+    }
+
+    pub fn user(&self) -> Option<&JiraUser> {
+        match &self.user_state {
+            Loaded(user) => Some(user),
+            _ => None,
+        }
+    }
+
+    pub fn tickets(&self) -> Option<&Vec<JiraTicket>> {
+        match &self.tickets_state {
+            Loaded(tickets) => Some(tickets),
+            _ => None,
+        }
+    }
+
+    pub fn tickets_mut(&mut self) -> Option<&mut Vec<JiraTicket>> {
+        match &mut self.tickets_state {
+            Loaded(tickets) => Some(tickets),
+            _ => None,
         }
     }
 
@@ -76,7 +115,7 @@ impl<'a> App<'a> {
         mut app_rx: Receiver<AppEvent>,
     ) -> io::Result<()> {
         let tick_rate = std::time::Duration::from_millis(45);
-        let mut last_tick = Instant::now();
+        let last_tick = Instant::now();
 
         while !self.exit {
             let now = Instant::now();
@@ -104,8 +143,12 @@ impl<'a> App<'a> {
             AppEvent::KeyEvent(CEvent::Key(key)) => self.handle_key_event(key)?,
 
             AppEvent::TicketsLoaded(tickets) => {
-                self.tickets = tickets;
+                self.tickets_state = Loaded(tickets);
                 self.selected_idx = Some(0);
+            }
+
+            AppEvent::UserLoaded(user) => {
+                self.user_state = Loaded(user);
             }
 
             AppEvent::TicketLoaded(ticket) => {
@@ -116,15 +159,11 @@ impl<'a> App<'a> {
                 todo!()
             }
 
-            AppEvent::UserLoaded(user) => {
-                todo!()
-            }
-
             AppEvent::Tick => {
                 self.on_tick();
             }
 
-            AppEvent::ApiError(err) => self.error = Some(err),
+            // AppEvent::ApiError(err) => self.error = Some(err),
 
             _ => {}
         }
@@ -145,30 +184,39 @@ impl<'a> App<'a> {
     }
 
     fn selected_ticket(&self) -> Option<&JiraTicket> {
-        self.selected_idx.and_then(|i| self.tickets.get(i))
+        let tickets = self.tickets()?;
+        let selected_idx = self.selected_idx?;
+
+        tickets.get(selected_idx)
     }
 
     fn next_ticket(&mut self) {
-        if self.tickets.is_empty() {
-            return;
+        if let Some(tickets) = self.tickets() {
+            if tickets.is_empty() {
+                return;
+            }
+
+            self.selected_idx = Some(match self.selected_idx {
+                Some(i) => (1 + i) % tickets.len(), // Move down, wrap to top
+                None => 0,
+            })
         }
 
-        self.selected_idx = Some(match self.selected_idx {
-            Some(i) => (1 + i) % self.tickets.len(), // Move down, wrap to top
-            None => 0,
-        })
     }
 
     fn previous_ticket(&mut self) {
-        if self.tickets.is_empty() {
-            return;
+        if let Some(tickets) = self.tickets() {
+            if tickets.is_empty() {
+                return;
+            }
+
+            self.selected_idx = Some(match self.selected_idx {
+                Some(i) if i > 0 => i - 1, // Move up
+                Some(_) => tickets.len() - 1, // Wrap to bottom
+                None => 0,
+            })
         }
 
-        self.selected_idx = Some(match self.selected_idx {
-            Some(i) if i > 0 => i - 1,         // Move up
-            Some(_) => self.tickets.len() - 1, // Wrap to bottom
-            None => 0,
-        })
     }
 
     // TODO: Move to events.rs

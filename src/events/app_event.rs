@@ -23,5 +23,5 @@ pub enum ActionEvent {
     FetchTickets,
     FetchTicket { ticket_key: String },
     LogTime { ticket_key: String, time: u32 },
-    FetchUser(JiraUser),
+    FetchUser,
 }

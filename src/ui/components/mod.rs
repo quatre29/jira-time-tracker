@@ -3,6 +3,8 @@ mod header;
 mod input;
 mod ticket_list;
 mod time_input_dialog;
+pub mod user_info;
+pub mod ticket_info;
 
 pub use component::{Component, ComponentName};
 pub use header::Header;

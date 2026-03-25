@@ -89,8 +89,11 @@ impl JiraClient {
         Ok(issue.into())
     }
 
-    pub async fn fetch_user(&self, user_id: String) -> Result<JiraUser> {
-        todo!()
+    pub async fn fetch_user(&self) -> Result<JiraUser> {
+        let res = self.client.get(self.url("/myself")).send().await?.error_for_status()?;
+        let user: JiraUserDto = res.json().await?;
+
+        Ok(JiraUser::from(user))
     }
 
     pub async fn log_time(&self, ticket_id: String, time: u32) -> Result<JiraTicket> {
