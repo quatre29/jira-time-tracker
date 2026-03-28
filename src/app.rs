@@ -15,7 +15,7 @@ use crate::events::app_event::AppEvent;
 use crate::events::dispatcher::dispatch;
 use crate::storage::storage::Storage;
 use crate::ui::components::popup::Popup;
-use crate::ui::components::{Component, ComponentName, TimeInputPopup, TicketInputPopup};
+use crate::ui::components::{Component, ComponentName, TimeInputPopup, TicketInputPopup, ConfirmationPopup};
 
 pub enum PopupState<'a> {
     None,
@@ -107,7 +107,7 @@ impl<'a> App<'a> {
     where
     C: Component + 'static
     {
-        let popup = Popup::new(title, content);
+        let popup = Popup::new(title, content).size(40, 20);
 
         self.popup = PopupState::Active(Box::new(popup));
     }
@@ -279,6 +279,7 @@ impl<'a> App<'a> {
             ComponentName::TicketList => self.handle_ticket_list_keys(key_event)?,
             ComponentName::TimeInputPopup => self.handle_popup_keys(key_event)?,
             ComponentName::TicketInputPopup => self.handle_popup_keys(key_event)?,
+            ComponentName::ConfirmationPopup => self.handle_popup_keys(key_event)?,
             _ => {}
         }
 
@@ -291,23 +292,30 @@ impl<'a> App<'a> {
             KeyCode::Char('t') if matches!(self.popup, PopupState::None) => {
                 self.show_popup("Add Ticket", TicketInputPopup::new());
                 self.focus(ComponentName::TicketInputPopup);
-            },
+            }
+
             KeyCode::Char('d') => {
                 let ticket_key =  self.selected_ticket().unwrap().key.clone();
-                
+
+                self.show_popup("Confirmation", ConfirmationPopup::new("Are you sure you want to remove this ticket?"));
+                self.focus(ComponentName::ConfirmationPopup);
+
                 // TODO: before we dispatch we need to show the modal for the user to confirm deletion
-                self.dispatch(ActionEvent::RemoveTicket { ticket_key })
-            },
+                // self.dispatch(ActionEvent::RemoveTicket { ticket_key })
+            }
+
             KeyCode::Up => {
                 if let PopupState::None = self.popup {
                     self.previous_ticket();
                 }
             }
+
             KeyCode::Down => {
                 if let PopupState::None = self.popup {
                     self.next_ticket();
                 }
             }
+
             KeyCode::Enter if matches!(self.popup, PopupState::None) => {
                 let selected_ticket = self.selected_ticket();
 
@@ -316,6 +324,7 @@ impl<'a> App<'a> {
                     self.focus(ComponentName::TimeInputPopup);
                 }
             }
+
             _ => {}
         }
 

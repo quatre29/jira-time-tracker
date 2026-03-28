@@ -31,7 +31,7 @@ impl<'a, C: Component> Popup<'a, C> {
     pub fn new(title: impl Into<String>, content: C) -> Self {
         Self {
             title: title.into(),
-            border_color: Theme::default_border_color(),
+            border_color: Theme::focused_border_color(),
             width: 40,
             height: 30,
             animation_start_time: Instant::now(),
@@ -91,6 +91,13 @@ impl<'a, C: Component> Popup<'a, C> {
 
 impl<'a, C: Component> Component for Popup<'a, C> {
     fn render(&self, app: &App, frame: &mut Frame, area: Rect, dt: Duration) {
+        frame.render_widget(
+            Block::default().style(
+                Style::default().bg(Color::Black).add_modifier(Modifier::DIM)
+            ),
+            area,
+        );
+        
         let area = self.centered_rect_percent(self.width, self.height, area);
 
         frame.render_widget(Clear, area);

@@ -17,6 +17,9 @@ pub enum AppEvent {
     #[from]
     Action(ActionEvent),
 
+    ConfirmPopup,
+    CancelPopup,
+
     Tick,
 }
 
@@ -26,4 +29,5 @@ pub enum ActionEvent {
     RemoveTicket { ticket_key: String },
     LogTime { ticket_key: String, time: u32 },
     FetchUser,
+
 }

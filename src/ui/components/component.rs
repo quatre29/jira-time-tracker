@@ -12,6 +12,7 @@ pub enum ComponentName {
     TicketList,
     TimeInputPopup,
     TicketInputPopup,
+    ConfirmationPopup,
 }
 
 pub trait Component {
