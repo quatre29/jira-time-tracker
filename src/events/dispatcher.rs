@@ -44,6 +44,8 @@ pub fn dispatch(
             tokio::spawn(async move {
                 match client.fetch_ticket(&ticket_key).await {
                     Ok(ticket) => {
+                        storage.add_ticket_key(ticket.key.clone()).unwrap();
+
                         let _ = app_tx.send(AppEvent::TicketLoaded(ticket)).await;
                     }
                     Err(e) => {

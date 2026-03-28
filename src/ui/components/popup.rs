@@ -15,6 +15,7 @@ use crate::{
         theme::Theme,
     },
 };
+use crate::events::app_event::AppEvent;
 
 pub struct Popup<'a, C: Component> {
     title: String,
@@ -116,7 +117,7 @@ impl<'a, C: Component> Component for Popup<'a, C> {
         frame.render_effect(&mut fade_effect, area, duration);
     }
 
-    fn handle_key(&mut self, key: KeyEvent) {
-        self.content.handle_key(key);
+    fn handle_key(&mut self, key: KeyEvent) -> Option<AppEvent> {
+        self.content.handle_key(key)
     }
 }

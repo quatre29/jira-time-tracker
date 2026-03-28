@@ -1,9 +1,11 @@
 use std::time::Duration;
+use crossterm::event::KeyEvent;
 use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::prelude::{Modifier, Span, Style};
 use ratatui::widgets::{Block, BorderType, Borders};
 use crate::app::App;
+use crate::events::app_event::AppEvent;
 use crate::ui::components::Component;
 use crate::ui::theme::Theme;
 
@@ -37,5 +39,9 @@ impl Component for TicketInfo {
                 .style(Style::default().bg(Theme::panel_background())),
             area,
         );
+    }
+
+    fn handle_key(&mut self, _key: KeyEvent) -> Option<AppEvent> {
+        None
     }
 }

@@ -1,4 +1,5 @@
 use std::time::Duration;
+use crossterm::event::KeyEvent;
 use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::prelude::{Modifier, Span, Style};
@@ -6,6 +7,7 @@ use ratatui::style::Color;
 use ratatui::text::Line;
 use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
 use crate::app::{App, LoadState};
+use crate::events::app_event::AppEvent;
 use crate::ui::components::Component;
 use crate::ui::theme::Theme;
 
@@ -55,5 +57,9 @@ impl Component for UserInfo {
         );
 
         frame.render_widget(paragraph, area);
+    }
+
+    fn handle_key(&mut self, _key: KeyEvent) -> Option<AppEvent> {
+        None
     }
 }

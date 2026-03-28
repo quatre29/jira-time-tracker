@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::io;
 use std::time::{Duration, Instant};
 
@@ -40,6 +41,8 @@ pub struct App<'a> {
 
     pub tickets_state: LoadState<Vec<JiraTicket>>,
     pub user_state: LoadState<JiraUser>,
+
+    pub pending_events: VecDeque<AppEvent>,
 }
 
 impl<'a> App<'a> {
@@ -74,6 +77,8 @@ impl<'a> App<'a> {
 
             tickets_state: Loading,
             user_state: Loading,
+
+            pending_events: vec![].into(),
         }
     }
 
@@ -132,13 +137,27 @@ impl<'a> App<'a> {
 
             tokio::select! {
                 Some(event) = app_rx.recv() => {
-                    self.handle_event(event).await?;
+                    self.pending_events.push_back(event);
                 }
 
                 _ = tokio::time::sleep(tick_rate) => {
                         self.on_tick();
                     }
             }
+
+            self.process_pending_events().await?;
+        }
+
+        Ok(())
+    }
+
+    pub fn dispatch(&self, action: ActionEvent) {
+        dispatch(action, self.app_tx.clone(), &self.storage, &self.jira_client);
+    }
+
+    async fn process_pending_events(&mut self) -> io::Result<()> {
+        while let Some(event) = self.pending_events.pop_front() {
+            self.handle_event(event).await?;
         }
 
         Ok(())
@@ -158,7 +177,16 @@ impl<'a> App<'a> {
             }
 
             AppEvent::TicketLoaded(ticket) => {
-                todo!()
+                match self.tickets_mut() {
+                    Some(tickets) => {
+                        tickets.push(ticket);
+                    },
+                    None => {
+                        self.tickets_state = Loaded(vec![ticket])
+                    },
+                };
+
+                // TODO: Save the ticket into storage
             }
 
             AppEvent::TimeLogged(ticket) => {
@@ -169,6 +197,9 @@ impl<'a> App<'a> {
                 self.on_tick();
             }
 
+            AppEvent::Action(action ) => {
+                self.dispatch(action);
+            }
             // AppEvent::ApiError(err) => self.error = Some(err),
             _ => {}
         }
@@ -222,7 +253,6 @@ impl<'a> App<'a> {
         }
     }
 
-    // TODO: Move to events.rs
     fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
         if key_event.kind != KeyEventKind::Press {
             return Ok(());
@@ -247,7 +277,6 @@ impl<'a> App<'a> {
         Ok(())
     }
 
-    // TODO: This should be handled by its Component
     fn handle_ticket_list_keys(&mut self, key: KeyEvent) -> io::Result<()> {
         match key.code {
             KeyCode::Char('q') => self.exit = true,
@@ -280,20 +309,23 @@ impl<'a> App<'a> {
     }
 
     fn handle_popup_keys(&mut self, key: KeyEvent) -> io::Result<()> {
+        let mut event: Option<AppEvent> = None;
+
         match &mut self.popup {
             PopupState::Active(popup) => match key.code {
                 KeyCode::Esc => {
                     self.close_popup();
                     self.focus(ComponentName::TicketList);
                 }
-                KeyCode::Enter => {
-                    // TODO: Log time | Validate input -> Error || POST
-                }
                 _ => {
-                    popup.handle_key(key);
+                    event = popup.handle_key(key);
                 }
             },
             PopupState::None => {}
+        }
+
+        if let Some(event) = event {
+            self.pending_events.push_back(event);
         }
 
         Ok(())

@@ -1,5 +1,5 @@
 use std::time::Duration;
-
+use crossterm::event::KeyEvent;
 use ratatui::{
     Frame,
     layout::Rect,
@@ -13,6 +13,7 @@ use crate::{
     ui::{components::Component, theme::Theme},
 };
 use crate::app::LoadState;
+use crate::events::app_event::AppEvent;
 
 pub struct TicketList {
     title: String,
@@ -84,5 +85,9 @@ impl Component for TicketList {
                 frame.render_widget(error, area);
             }
         }
+    }
+
+    fn handle_key(&mut self, _key: KeyEvent) -> Option<AppEvent> {
+        None
     }
 }
