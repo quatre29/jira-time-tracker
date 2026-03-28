@@ -58,6 +58,12 @@ impl Storage {
         Ok(())
     }
 
+    pub fn is_ticket_stored(&self, key: &String) -> Result<bool> {
+        let keys = self.load_ticket_keys()?;
+
+        Ok(keys.contains(key))
+    }
+
     fn save_ticket_keys(&self, keys: &[String]) -> Result<()> {
         let json = serde_json::to_string_pretty(keys)?;
 

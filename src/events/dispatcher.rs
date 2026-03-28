@@ -41,19 +41,34 @@ pub fn dispatch(
         }
 
         ActionEvent::FetchTicket { ticket_key } => {
-            tokio::spawn(async move {
-                match client.fetch_ticket(&ticket_key).await {
-                    Ok(ticket) => {
-                        storage.add_ticket_key(ticket.key.clone()).unwrap();
+            match storage.is_ticket_stored(&ticket_key) {
+                Ok(ticket) => {
+                    tokio::spawn(async move {
+                        match client.fetch_ticket(&ticket_key).await {
+                            Ok(ticket) => {
+                                storage.add_ticket_key(ticket.key.clone()).unwrap();
 
-                        let _ = app_tx.send(AppEvent::TicketLoaded(ticket)).await;
-                    }
-                    Err(e) => {
-                        let _ = app_tx.send(AppEvent::ApiError(e.to_string())).await;
-                    }
-                }
-            });
+                                let _ = app_tx.send(AppEvent::TicketLoaded(ticket)).await;
+                            }
+                            Err(e) => {
+                                let _ = app_tx.send(AppEvent::ApiError(e.to_string())).await;
+                            }
+                        }
+                    });
+                },
+                Err(err) => {
+                    // TODO: we need to display error - ticket already existing!
+                },
+            }
         }
+
+        ActionEvent::RemoveTicket { ticket_key } => {
+            tokio::spawn(async move {
+                storage.remove_ticket_key(&ticket_key).expect("Storage error: Could not access storage");
+                app_tx.send(AppEvent::TicketRemoved { ticket_key, }).await
+            });
+
+        },
 
         ActionEvent::LogTime { ticket_key, time } => {
             tokio::spawn(async move {

@@ -114,6 +114,8 @@ impl<'a> App<'a> {
 
     pub fn close_popup(&mut self) {
         self.popup = PopupState::None;
+
+        self.focus(ComponentName::TicketList);
     }
 
     pub fn on_tick(&mut self) {
@@ -186,12 +188,18 @@ impl<'a> App<'a> {
                     },
                 };
 
-                // TODO: Save the ticket into storage
+                self.close_popup();
             }
 
             AppEvent::TimeLogged(ticket) => {
                 todo!()
             }
+
+            AppEvent::TicketRemoved { ticket_key } => {
+               if let Some(tickets) = self.tickets_mut() {
+                   tickets.retain(|ticket| ticket.key != ticket_key)
+               }
+            },
 
             AppEvent::Tick => {
                 self.on_tick();
@@ -284,6 +292,12 @@ impl<'a> App<'a> {
                 self.show_popup("Add Ticket", TicketInputPopup::new());
                 self.focus(ComponentName::TicketInputPopup);
             },
+            KeyCode::Char('d') => {
+                let ticket_key =  self.selected_ticket().unwrap().key.clone();
+                
+                // TODO: before we dispatch we need to show the modal for the user to confirm deletion
+                self.dispatch(ActionEvent::RemoveTicket { ticket_key })
+            },
             KeyCode::Up => {
                 if let PopupState::None = self.popup {
                     self.previous_ticket();
@@ -315,7 +329,6 @@ impl<'a> App<'a> {
             PopupState::Active(popup) => match key.code {
                 KeyCode::Esc => {
                     self.close_popup();
-                    self.focus(ComponentName::TicketList);
                 }
                 _ => {
                     event = popup.handle_key(key);
