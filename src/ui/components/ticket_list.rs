@@ -21,7 +21,7 @@ pub struct TicketList {
 impl TicketList {
     pub fn new() -> Self {
         Self {
-            title: "Tickets".to_string(),
+            title: "Ticket List".to_string(),
         }
     }
 }
@@ -33,7 +33,7 @@ impl Component for TicketList {
             .border_type(BorderType::HeavyTripleDashed)
             .border_style(Style::default().fg(Theme::default_border_color()))
             .title(Span::styled(
-                "Ticket List",
+                &self.title,
                 Style::default()
                     .fg(Theme::primary_color())
                     .bg(Theme::panel_background())

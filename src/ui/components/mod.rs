@@ -1,13 +1,16 @@
 mod component;
 mod header;
 mod input;
-mod ticket_list;
-mod time_input_dialog;
-pub mod user_info;
+pub mod popup;
 pub mod ticket_info;
+mod ticket_list;
+mod time_input_popup;
+mod ticket_input_popup;
+pub mod user_info;
 
 pub use component::{Component, ComponentName};
 pub use header::Header;
 pub use input::Input;
 pub use ticket_list::TicketList;
-pub use time_input_dialog::TimeInputDialog;
+pub use time_input_popup::TimeInputPopup;
+pub use ticket_input_popup::TicketInputPopup;

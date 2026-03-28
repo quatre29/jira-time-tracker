@@ -1,11 +1,11 @@
-use std::time::{Duration, Instant};
-
+use crossterm::event::KeyEvent;
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     widgets::{Block, BorderType, Clear},
 };
+use std::time::{Duration, Instant};
 use tachyonfx::{Duration as FxDuration, EffectRenderer, fx};
 
 use crate::{
@@ -16,24 +16,26 @@ use crate::{
     },
 };
 
-pub struct TimeInputDialog<'a> {
-    pub time_input_textarea: Input<'a>,
+pub struct Popup<'a, C: Component> {
     title: String,
     border_color: Color,
     width: u16,
     height: u16,
     animation_start_time: Instant,
+    content: C,
+    _marker: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a> TimeInputDialog<'a> {
-    pub fn new(title: impl Into<String>) -> Self {
+impl<'a, C: Component> Popup<'a, C> {
+    pub fn new(title: impl Into<String>, content: C) -> Self {
         Self {
             title: title.into(),
             border_color: Theme::default_border_color(),
             width: 40,
             height: 30,
             animation_start_time: Instant::now(),
-            time_input_textarea: Input::new("Iput time - Jira Format").placeholder_text("2h30m"),
+            content,
+            _marker: Default::default(),
         }
     }
 
@@ -86,9 +88,8 @@ impl<'a> TimeInputDialog<'a> {
     }
 }
 
-// FIXME: the structure of rendering stuff inside the input dialog popup is chaotic
-impl<'a> Component for TimeInputDialog<'a> {
-    fn render(&self, _app: &App, frame: &mut Frame, area: Rect, _dt: Duration) {
+impl<'a, C: Component> Component for Popup<'a, C> {
+    fn render(&self, app: &App, frame: &mut Frame, area: Rect, dt: Duration) {
         let area = self.centered_rect_percent(self.width, self.height, area);
 
         frame.render_widget(Clear, area);
@@ -101,7 +102,7 @@ impl<'a> Component for TimeInputDialog<'a> {
 
         let inner_area = block.inner(area);
 
-        frame.render_widget(self.time_input_textarea.textarea.widget(), inner_area);
+        self.content.render(app, frame, inner_area, dt);
 
         let mut fade_effect = fx::coalesce_from(
             Style::default(),
@@ -113,5 +114,9 @@ impl<'a> Component for TimeInputDialog<'a> {
 
         frame.render_widget(block, area);
         frame.render_effect(&mut fade_effect, area, duration);
+    }
+
+    fn handle_key(&mut self, key: KeyEvent) {
+        self.content.handle_key(key);
     }
 }

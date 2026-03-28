@@ -45,7 +45,7 @@ impl Component for UserInfo {
                 .border_type(BorderType::Plain)
                 .border_style(Style::default().fg(Theme::default_border_color()))
                 .title(Span::styled(
-                    "User Info",
+                    &self.title,
                     Style::default()
                         .fg(Theme::primary_color())
                         .bg(Theme::panel_background())

@@ -13,11 +13,12 @@ use crate::events::app_event::ActionEvent;
 use crate::events::app_event::AppEvent;
 use crate::events::dispatcher::dispatch;
 use crate::storage::storage::Storage;
-use crate::ui::components::{ComponentName, TimeInputDialog};
+use crate::ui::components::popup::Popup;
+use crate::ui::components::{Component, ComponentName, TimeInputPopup, TicketInputPopup};
 
 pub enum PopupState<'a> {
     None,
-    InputTime(Box<TimeInputDialog<'a>>),
+    Active(Box<dyn Component + 'a>),
 }
 
 pub enum LoadState<T> {
@@ -57,7 +58,7 @@ impl<'a> App<'a> {
             ActionEvent::FetchUser,
             app_tx.clone(),
             &storage,
-            &jira_client
+            &jira_client,
         );
 
         Self {
@@ -97,8 +98,13 @@ impl<'a> App<'a> {
         }
     }
 
-    pub fn show_time_input_dialog(&mut self, title: &str) {
-        self.popup = PopupState::InputTime(Box::new(TimeInputDialog::new(title)));
+    pub fn show_popup<C>(&mut self, title: &str, content:C)
+    where
+    C: Component + 'static
+    {
+        let popup = Popup::new(title, content);
+
+        self.popup = PopupState::Active(Box::new(popup));
     }
 
     pub fn close_popup(&mut self) {
@@ -164,7 +170,6 @@ impl<'a> App<'a> {
             }
 
             // AppEvent::ApiError(err) => self.error = Some(err),
-
             _ => {}
         }
 
@@ -201,7 +206,6 @@ impl<'a> App<'a> {
                 None => 0,
             })
         }
-
     }
 
     fn previous_ticket(&mut self) {
@@ -211,12 +215,11 @@ impl<'a> App<'a> {
             }
 
             self.selected_idx = Some(match self.selected_idx {
-                Some(i) if i > 0 => i - 1, // Move up
+                Some(i) if i > 0 => i - 1,    // Move up
                 Some(_) => tickets.len() - 1, // Wrap to bottom
                 None => 0,
             })
         }
-
     }
 
     // TODO: Move to events.rs
@@ -236,7 +239,8 @@ impl<'a> App<'a> {
 
         match self.focused {
             ComponentName::TicketList => self.handle_ticket_list_keys(key_event)?,
-            ComponentName::TimeInputDialog => self.handle_popup_keys(key_event)?,
+            ComponentName::TimeInputPopup => self.handle_popup_keys(key_event)?,
+            ComponentName::TicketInputPopup => self.handle_popup_keys(key_event)?,
             _ => {}
         }
 
@@ -247,6 +251,10 @@ impl<'a> App<'a> {
     fn handle_ticket_list_keys(&mut self, key: KeyEvent) -> io::Result<()> {
         match key.code {
             KeyCode::Char('q') => self.exit = true,
+            KeyCode::Char('t') if matches!(self.popup, PopupState::None) => {
+                self.show_popup("Add Ticket", TicketInputPopup::new());
+                self.focus(ComponentName::TicketInputPopup);
+            },
             KeyCode::Up => {
                 if let PopupState::None = self.popup {
                     self.previous_ticket();
@@ -261,8 +269,8 @@ impl<'a> App<'a> {
                 let selected_ticket = self.selected_ticket();
 
                 if let Some(selected_ticket) = selected_ticket {
-                    self.show_time_input_dialog(&selected_ticket.title.clone().as_str());
-                    self.focus(ComponentName::TimeInputDialog);
+                    self.show_popup(selected_ticket.title.clone().as_str(), TimeInputPopup::new());
+                    self.focus(ComponentName::TimeInputPopup);
                 }
             }
             _ => {}
@@ -271,10 +279,9 @@ impl<'a> App<'a> {
         Ok(())
     }
 
-    // TODO: This should be handled by its Component
     fn handle_popup_keys(&mut self, key: KeyEvent) -> io::Result<()> {
         match &mut self.popup {
-            PopupState::InputTime(dialog) => match key.code {
+            PopupState::Active(popup) => match key.code {
                 KeyCode::Esc => {
                     self.close_popup();
                     self.focus(ComponentName::TicketList);
@@ -283,7 +290,7 @@ impl<'a> App<'a> {
                     // TODO: Log time | Validate input -> Error || POST
                 }
                 _ => {
-                    dialog.time_input_textarea.textarea.input(key);
+                    popup.handle_key(key);
                 }
             },
             PopupState::None => {}

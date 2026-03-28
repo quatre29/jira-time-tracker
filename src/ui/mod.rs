@@ -15,7 +15,7 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
     pages::home::render(frame, app, dt);
 
     match &app.popup {
-        PopupState::InputTime(dialog) => dialog.render(app, frame, frame.area(), dt),
+        PopupState::Active(popup) => popup.render(app, frame, frame.area(), dt),
         PopupState::None => {}
     }
 }
