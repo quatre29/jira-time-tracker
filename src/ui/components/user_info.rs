@@ -7,7 +7,7 @@ use ratatui::style::Color;
 use ratatui::text::Line;
 use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
 use crate::app::{App, LoadState};
-use crate::events::app_event::AppEvent;
+use crate::events::app_event::{AppEvent, UiEvent};
 use crate::ui::components::Component;
 use crate::ui::theme::Theme;
 
@@ -59,7 +59,7 @@ impl Component for UserInfo {
         frame.render_widget(paragraph, area);
     }
 
-    fn handle_key(&mut self, _key: KeyEvent) -> Option<AppEvent> {
+    fn handle_key(&mut self, _key: KeyEvent) -> Option<UiEvent> {
         None
     }
 }

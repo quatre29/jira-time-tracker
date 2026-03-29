@@ -14,15 +14,13 @@ pub enum AppEvent {
     ApiError(String),
     TicketRemoved { ticket_key: String },
 
-    #[from]
-    Action(ActionEvent),
-
     ConfirmPopup,
-    CancelPopup,
+    ClosePopup,
 
     Tick,
 }
 
+#[derive(Clone)]
 pub enum ActionEvent {
     FetchTickets,
     FetchTicket { ticket_key: String },
@@ -30,4 +28,9 @@ pub enum ActionEvent {
     LogTime { ticket_key: String, time: u32 },
     FetchUser,
 
+}
+
+pub enum UiEvent {
+    App(AppEvent),
+    Action(ActionEvent),
 }

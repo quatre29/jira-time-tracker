@@ -13,7 +13,7 @@ use crate::{
     ui::{components::Component, theme::Theme},
 };
 use crate::app::LoadState;
-use crate::events::app_event::AppEvent;
+use crate::events::app_event::{AppEvent, UiEvent};
 
 pub struct TicketList {
     title: String,
@@ -87,7 +87,7 @@ impl Component for TicketList {
         }
     }
 
-    fn handle_key(&mut self, _key: KeyEvent) -> Option<AppEvent> {
+    fn handle_key(&mut self, _key: KeyEvent) -> Option<UiEvent> {
         None
     }
 }

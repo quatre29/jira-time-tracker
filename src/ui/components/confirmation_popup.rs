@@ -5,20 +5,22 @@ use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
 use ratatui::prelude::{Modifier, Style};
 use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
 use crate::app::App;
-use crate::events::app_event::{ActionEvent, AppEvent};
+use crate::events::app_event::{ActionEvent, AppEvent, UiEvent};
 use crate::ui::components::{Component};
 use crate::ui::theme::Theme;
 
 pub struct ConfirmationPopup  {
     confirmation_text: String,
-    selected: usize
+    selected: usize,
+    on_confirm: ActionEvent,
 }
 
 impl ConfirmationPopup  {
-    pub fn new(confirmation_text: impl Into<String>) -> Self {
+    pub fn new(confirmation_text: impl Into<String>, on_confirm: ActionEvent) -> Self {
         Self {
             confirmation_text: confirmation_text.into(),
             selected: 0,
+            on_confirm
         }
     }
 }
@@ -89,7 +91,7 @@ impl Component for ConfirmationPopup {
         );
     }
 
-    fn handle_key(&mut self, key: KeyEvent) -> Option<AppEvent> {
+    fn handle_key(&mut self, key: KeyEvent) -> Option<UiEvent> {
         match key.code {
             KeyCode::Left | KeyCode::Right | KeyCode::Tab => {
                 self.selected = (self.selected + 1) % 2;
@@ -97,9 +99,9 @@ impl Component for ConfirmationPopup {
             },
             KeyCode::Enter => {
                 if self.selected == 0 {
-                    None
+                    Some(UiEvent::Action(self.on_confirm.clone()))
                 } else {
-                    None
+                    Some(UiEvent::App(AppEvent::ClosePopup))
                 }
             },
             _ => {

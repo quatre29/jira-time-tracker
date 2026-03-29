@@ -65,9 +65,9 @@ pub fn dispatch(
         ActionEvent::RemoveTicket { ticket_key } => {
             tokio::spawn(async move {
                 storage.remove_ticket_key(&ticket_key).expect("Storage error: Could not access storage");
-                app_tx.send(AppEvent::TicketRemoved { ticket_key, }).await
+               let _ = app_tx.send(AppEvent::TicketRemoved { ticket_key, }).await;
+               let _ = app_tx.send(AppEvent::ClosePopup).await;
             });
-
         },
 
         ActionEvent::LogTime { ticket_key, time } => {

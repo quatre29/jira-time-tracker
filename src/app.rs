@@ -10,9 +10,10 @@ use crate::api::config::JiraConfig;
 use crate::api::jira_client::JiraClient;
 use crate::api::models::{JiraTicket, JiraUser};
 use crate::app::LoadState::{Loaded, Loading};
-use crate::events::app_event::ActionEvent;
+use crate::events::app_event::{ActionEvent, UiEvent};
 use crate::events::app_event::AppEvent;
 use crate::events::dispatcher::dispatch;
+use crate::events::effect::Effect;
 use crate::storage::storage::Storage;
 use crate::ui::components::popup::Popup;
 use crate::ui::components::{Component, ComponentName, TimeInputPopup, TicketInputPopup, ConfirmationPopup};
@@ -159,23 +160,37 @@ impl<'a> App<'a> {
 
     async fn process_pending_events(&mut self) -> io::Result<()> {
         while let Some(event) = self.pending_events.pop_front() {
-            self.handle_event(event).await?;
+            let effects = self.update(event);
+
+            for effect in effects {
+                match effect {
+                    Effect::Action(action) => {
+                        self.dispatch(action);
+                    }
+                }
+            }
         }
 
         Ok(())
     }
 
-    pub async fn handle_event(&mut self, event: AppEvent) -> io::Result<()> {
+    pub fn update(&mut self, event: AppEvent) -> Vec<Effect> {
         match event {
-            AppEvent::KeyEvent(CEvent::Key(key)) => self.handle_key_event(key)?,
+            AppEvent::KeyEvent(CEvent::Key(key)) => {
+                self.handle_key_event(key).unwrap_or_default();
+
+                vec![]
+            },
 
             AppEvent::TicketsLoaded(tickets) => {
                 self.tickets_state = Loaded(tickets);
                 self.selected_idx = Some(0);
+                vec![]
             }
 
             AppEvent::UserLoaded(user) => {
                 self.user_state = Loaded(user);
+                vec![]
             }
 
             AppEvent::TicketLoaded(ticket) => {
@@ -189,6 +204,8 @@ impl<'a> App<'a> {
                 };
 
                 self.close_popup();
+
+                vec![]
             }
 
             AppEvent::TimeLogged(ticket) => {
@@ -197,22 +214,32 @@ impl<'a> App<'a> {
 
             AppEvent::TicketRemoved { ticket_key } => {
                if let Some(tickets) = self.tickets_mut() {
-                   tickets.retain(|ticket| ticket.key != ticket_key)
+                   tickets.retain(|ticket| ticket.key != ticket_key);
                }
+
+                vec![]
             },
 
             AppEvent::Tick => {
                 self.on_tick();
+
+                vec![]
             }
 
-            AppEvent::Action(action ) => {
-                self.dispatch(action);
-            }
+            AppEvent::ClosePopup => {
+                self.close_popup();
+                vec![]
+            },
+
+            AppEvent::ConfirmPopup => {
+                vec![]
+            },
+
             // AppEvent::ApiError(err) => self.error = Some(err),
-            _ => {}
+            _ => {
+                vec![]
+            }
         }
-
-        Ok(())
     }
 
     pub fn is_focused(&self, component_name: &ComponentName) -> bool {
@@ -297,11 +324,8 @@ impl<'a> App<'a> {
             KeyCode::Char('d') => {
                 let ticket_key =  self.selected_ticket().unwrap().key.clone();
 
-                self.show_popup("Confirmation", ConfirmationPopup::new("Are you sure you want to remove this ticket?"));
+                self.show_popup("Confirmation", ConfirmationPopup::new("Are you sure you want to remove this ticket?", ActionEvent::RemoveTicket { ticket_key }));
                 self.focus(ComponentName::ConfirmationPopup);
-
-                // TODO: before we dispatch we need to show the modal for the user to confirm deletion
-                // self.dispatch(ActionEvent::RemoveTicket { ticket_key })
             }
 
             KeyCode::Up => {
@@ -332,22 +356,25 @@ impl<'a> App<'a> {
     }
 
     fn handle_popup_keys(&mut self, key: KeyEvent) -> io::Result<()> {
-        let mut event: Option<AppEvent> = None;
-
         match &mut self.popup {
-            PopupState::Active(popup) => match key.code {
-                KeyCode::Esc => {
-                    self.close_popup();
+            PopupState::Active(popup) => {
+                if key.code == KeyCode::Esc {
+                    self.pending_events.push_back(AppEvent::ClosePopup);
+                    return Ok(());
                 }
-                _ => {
-                    event = popup.handle_key(key);
+
+                if let Some(event) = popup.handle_key(key) {
+                    match event {
+                        UiEvent::App(app_event) => {
+                            self.pending_events.push_back(app_event);
+                        }
+                        UiEvent::Action(action) => {
+                            self.dispatch(action);
+                        }
+                    }
                 }
             },
             PopupState::None => {}
-        }
-
-        if let Some(event) = event {
-            self.pending_events.push_back(event);
         }
 
         Ok(())

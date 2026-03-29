@@ -5,7 +5,7 @@ use ratatui::layout::Rect;
 use ratatui::prelude::{Modifier, Span, Style};
 use ratatui::widgets::{Block, BorderType, Borders};
 use crate::app::App;
-use crate::events::app_event::AppEvent;
+use crate::events::app_event::{AppEvent, UiEvent};
 use crate::ui::components::Component;
 use crate::ui::theme::Theme;
 
@@ -41,7 +41,7 @@ impl Component for TicketInfo {
         );
     }
 
-    fn handle_key(&mut self, _key: KeyEvent) -> Option<AppEvent> {
+    fn handle_key(&mut self, _key: KeyEvent) -> Option<UiEvent> {
         None
     }
 }

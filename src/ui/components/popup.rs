@@ -11,11 +11,11 @@ use tachyonfx::{Duration as FxDuration, EffectRenderer, fx};
 use crate::{
     app::App,
     ui::{
-        components::{Component, input::Input},
+        components::Component,
         theme::Theme,
     },
 };
-use crate::events::app_event::AppEvent;
+use crate::events::app_event::UiEvent;
 
 pub struct Popup<'a, C: Component> {
     title: String,
@@ -97,7 +97,7 @@ impl<'a, C: Component> Component for Popup<'a, C> {
             ),
             area,
         );
-        
+
         let area = self.centered_rect_percent(self.width, self.height, area);
 
         frame.render_widget(Clear, area);
@@ -124,7 +124,7 @@ impl<'a, C: Component> Component for Popup<'a, C> {
         frame.render_effect(&mut fade_effect, area, duration);
     }
 
-    fn handle_key(&mut self, key: KeyEvent) -> Option<AppEvent> {
+    fn handle_key(&mut self, key: KeyEvent) -> Option<UiEvent> {
         self.content.handle_key(key)
     }
 }

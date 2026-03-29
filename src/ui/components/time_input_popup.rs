@@ -6,7 +6,7 @@ use crate::{
     app::App,
     ui::components::{Component, input::Input},
 };
-use crate::events::app_event::{ActionEvent, AppEvent};
+use crate::events::app_event::{ActionEvent, AppEvent, UiEvent};
 
 pub struct TimeInputPopup<'a> {
     pub input: Input<'a>,
@@ -25,14 +25,14 @@ impl<'a> Component for TimeInputPopup<'a> {
         frame.render_widget(self.input.textarea.widget(), area);
     }
 
-    fn handle_key(&mut self, key: KeyEvent) -> Option<AppEvent> {
+    fn handle_key(&mut self, key: KeyEvent) -> Option<UiEvent> {
         match key.code {
             KeyCode::Enter => {
                 let ticket_key = self.input.textarea.lines().first().unwrap_or(&"".to_string()).clone();
                 // let time_to_log = todo!();
 
-                Some(AppEvent::Action(ActionEvent::LogTime {ticket_key, time: 2 }))
-            }
+                Some(UiEvent::Action(ActionEvent::LogTime {ticket_key, time: 2 }))
+            },
             _ => {
                 self.input.textarea.input(key);
 
