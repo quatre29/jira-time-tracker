@@ -2,11 +2,11 @@ use std::time::Duration;
 use crossterm::event::{KeyEvent, KeyCode};
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use ratatui::prelude::{Modifier, Style};
-use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
+use ratatui::widgets::Paragraph;
 use crate::app::App;
 use crate::events::app_event::{ActionEvent, AppEvent, UiEvent};
-use crate::ui::components::{Component};
+use crate::ui::components::Component;
+use crate::ui::components::Button::Button;
 use crate::ui::theme::Theme;
 
 pub struct ConfirmationPopup  {
@@ -54,41 +54,8 @@ impl Component for ConfirmationPopup {
             ])
             .split(layout[2]);
 
-        let selected_style = Style::default()
-            .fg(Theme::focused_border_color())
-            .add_modifier(Modifier::BOLD);
-
-        let normal_style = Style::default()
-            .fg(Theme::default_border_color())
-            .add_modifier(Modifier::BOLD);
-
-        let confirm_style = if self.selected == 0 {
-            selected_style
-        } else {
-            normal_style
-        };
-
-        let cancel_style = if self.selected == 1 {
-            selected_style
-        } else {
-            normal_style
-        };
-
-        frame.render_widget(
-            Paragraph::new(" Confirm ")
-                .alignment(Alignment::Center)
-                .style(confirm_style)
-                .block(Block::default().borders(Borders::ALL).padding(ratatui::widgets::Padding::new(0, 0, 0, 0)),),
-            buttons[1],
-        );
-
-        frame.render_widget(
-            Paragraph::new(" Cancel ")
-                .alignment(Alignment::Center)
-                .style(cancel_style)
-                .block(Block::default().borders(Borders::ALL).padding(ratatui::widgets::Padding::new(0, 0, 0, 0)),),
-            buttons[3],
-        );
+        frame.render_widget(Button::new("Confirm").theme(if self.selected == 0 {Theme::button_green()} else {Theme::button_blue()}), buttons[1]);
+        frame.render_widget(Button::new("Cancel").theme(if self.selected == 1 {Theme::button_green()} else {Theme::button_blue()}), buttons[3]);
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Option<UiEvent> {

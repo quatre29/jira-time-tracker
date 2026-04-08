@@ -10,7 +10,7 @@ pub enum AppEvent {
     TicketsLoaded(Vec<JiraTicket>),
     TicketLoaded(JiraTicket),
     UserLoaded(JiraUser),
-    TimeLogged(JiraTicket),
+    TimeLogged { ticket_key: String },
     ApiError(String),
     TicketRemoved { ticket_key: String },
 
@@ -25,7 +25,7 @@ pub enum ActionEvent {
     FetchTickets,
     FetchTicket { ticket_key: String },
     RemoveTicket { ticket_key: String },
-    LogTime { ticket_key: String, time: u32 },
+    LogTime { ticket_key: String, time_spent_seconds: u64, description: String, started: String },
     FetchUser,
 
 }

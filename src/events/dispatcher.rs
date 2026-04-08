@@ -42,7 +42,7 @@ pub fn dispatch(
 
         ActionEvent::FetchTicket { ticket_key } => {
             match storage.is_ticket_stored(&ticket_key) {
-                Ok(ticket) => {
+                Ok(_ticket) => {
                     tokio::spawn(async move {
                         match client.fetch_ticket(&ticket_key).await {
                             Ok(ticket) => {
@@ -70,11 +70,11 @@ pub fn dispatch(
             });
         },
 
-        ActionEvent::LogTime { ticket_key, time } => {
+        ActionEvent::LogTime { ticket_key, time_spent_seconds, started, description } => {
             tokio::spawn(async move {
-                match client.log_time(ticket_key, time).await {
-                    Ok(ticket) => {
-                        let _ = app_tx.send(AppEvent::TimeLogged(ticket)).await;
+                match client.log_time(ticket_key.clone(), time_spent_seconds, started, description).await {
+                    Ok(_ticket) => {
+                        let _ = app_tx.send(AppEvent::TimeLogged { ticket_key }).await;
                     }
                     Err(e) => {
                         let _ = app_tx.send(AppEvent::ApiError(e.to_string())).await;

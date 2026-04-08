@@ -40,8 +40,4 @@ impl Component for TicketInfo {
             area,
         );
     }
-
-    fn handle_key(&mut self, _key: KeyEvent) -> Option<UiEvent> {
-        None
-    }
 }

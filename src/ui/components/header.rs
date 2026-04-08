@@ -28,8 +28,4 @@ impl Component for Header {
 
         frame.render_widget(header, area);
     }
-
-    fn handle_key(&mut self, _key: KeyEvent) -> Option<UiEvent> {
-        None
-    }
 }

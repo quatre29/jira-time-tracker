@@ -108,7 +108,7 @@ impl<'a> App<'a> {
     where
     C: Component + 'static
     {
-        let popup = Popup::new(title, content).size(40, 20);
+        let popup = Popup::new(title, content).size(40, 40);
 
         self.popup = PopupState::Active(Box::new(popup));
     }
@@ -196,7 +196,11 @@ impl<'a> App<'a> {
             AppEvent::TicketLoaded(ticket) => {
                 match self.tickets_mut() {
                     Some(tickets) => {
-                        tickets.push(ticket);
+                        if let Some(existing) = tickets.iter_mut().find(|t| t.key == ticket.key) {
+                            *existing = ticket;
+                        } else {
+                            tickets.push(ticket);
+                        }
                     },
                     None => {
                         self.tickets_state = Loaded(vec![ticket])
@@ -208,8 +212,8 @@ impl<'a> App<'a> {
                 vec![]
             }
 
-            AppEvent::TimeLogged(ticket) => {
-                todo!()
+            AppEvent::TimeLogged { ticket_key } => {
+                vec![Effect::Action(ActionEvent::FetchTicket { ticket_key })]
             }
 
             AppEvent::TicketRemoved { ticket_key } => {
@@ -344,7 +348,7 @@ impl<'a> App<'a> {
                 let selected_ticket = self.selected_ticket();
 
                 if let Some(selected_ticket) = selected_ticket {
-                    self.show_popup(selected_ticket.title.clone().as_str(), TimeInputPopup::new());
+                    self.show_popup(selected_ticket.title.clone().as_str(), TimeInputPopup::new(self.selected_ticket().unwrap().key.clone()));
                     self.focus(ComponentName::TimeInputPopup);
                 }
             }

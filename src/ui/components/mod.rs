@@ -8,6 +8,8 @@ mod time_input_popup;
 mod ticket_input_popup;
 pub mod user_info;
 pub mod confirmation_popup;
+pub mod Button;
+pub mod button;
 
 pub use component::{Component, ComponentName};
 pub use header::Header;

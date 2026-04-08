@@ -8,7 +8,7 @@ pub struct JiraUser {
     pub locale: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct JiraTicket {
     pub id: String,
     pub key: String,

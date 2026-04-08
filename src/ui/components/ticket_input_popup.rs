@@ -6,7 +6,6 @@ use crate::app::App;
 use crate::events::app_event::{ActionEvent, UiEvent};
 use crate::ui::components::{Component, Input};
 
-
 pub struct TicketInputPopup<'a> {
     pub input: Input<'a>
 }
@@ -14,7 +13,7 @@ pub struct TicketInputPopup<'a> {
 impl<'a> TicketInputPopup <'a> {
     pub fn new() -> Self {
         Self {
-            input: Input::new("Input ticket key").placeholder_text("EXAMPLE-1"),
+            input: Input::new("Input ticket key", true).placeholder_text("EXAMPLE-1"),
         }
     }
 }

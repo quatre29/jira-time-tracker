@@ -58,8 +58,4 @@ impl Component for UserInfo {
 
         frame.render_widget(paragraph, area);
     }
-
-    fn handle_key(&mut self, _key: KeyEvent) -> Option<UiEvent> {
-        None
-    }
 }

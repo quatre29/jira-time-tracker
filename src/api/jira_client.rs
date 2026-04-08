@@ -1,6 +1,7 @@
 use base64::{Engine, engine::general_purpose};
 use futures::{StreamExt, stream};
 use reqwest::{Client, header};
+use serde_json::json;
 
 use super::JiraConfig;
 use super::dto::*;
@@ -96,7 +97,36 @@ impl JiraClient {
         Ok(JiraUser::from(user))
     }
 
-    pub async fn log_time(&self, ticket_id: String, time: u32) -> Result<JiraTicket> {
-        todo!()
+    pub async fn log_time(&self, ticket_id: String, time_spent_seconds: u64, started: String, description: String) -> Result<String> {
+        let body = json!({
+            "comment": {
+                "content": [
+                    {
+                        "content": [
+                            {
+                                "text": description,
+                                "type": "text"
+                            }
+                        ],
+                        "type": "paragraph"
+                    }
+                ],
+                "type": "doc",
+                "version": 1
+            },
+            "started": started,
+            "timeSpentSeconds": time_spent_seconds
+        });
+
+        let res = self.client
+            .post(self.url(&format!("/issue/{}/worklog", ticket_id) ))
+            .json(&body)
+            .send()
+            .await?
+            .error_for_status()?;
+
+        let text = res.text().await?;
+
+        Ok(text)
     }
 }
