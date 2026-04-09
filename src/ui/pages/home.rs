@@ -1,11 +1,10 @@
 use std::time::Duration;
-use color_eyre::owo_colors::OwoColorize;
 use ratatui::{
     Frame,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
+    style::Style,
     text::Span,
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::{Block, BorderType, Borders},
 };
 use tui_piechart::{PieChart, PieSlice};
 
@@ -24,7 +23,7 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
     let area = frame.area();
 
     frame.render_widget(
-        Block::default().style(Style::default().bg(Color::Rgb(0x06, 0x06, 0x0a))),
+        Block::default().style(Style::default().bg(Theme::bg())),
         area,
     );
 
@@ -84,44 +83,26 @@ pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
 
     matrix_rain::render_matrix_rain(frame, app.tick, area, &matrix_rain_occluders, 1, 0.3, 24);
 
-    frame.render_widget(
-        Paragraph::new("Body 1").block(
-            Block::new()
-                .borders(Borders::ALL)
-                .border_type(BorderType::Rounded)
-                .border_style(
-                    Style::default()
-                        .fg(Theme::default_border_color())
-                        .add_modifier(Modifier::BOLD),
-                ),
-        ),
-        body_layout[0],
-    );
+    TicketList::new().render(app, frame, body_layout[0], dt);
 
+    // Footer
     frame.render_widget(
         Block::default()
             .borders(Borders::ALL)
-            .border_type(BorderType::Plain)
-            .border_style(Style::default().fg(Theme::default_border_color()))
-            .title(Span::styled(
-                "Footer",
-                Style::default()
-                    .fg(Theme::primary_color())
-                    .bg(Theme::panel_background())
-                    .add_modifier(Modifier::BOLD),
-            ))
+            .border_type(BorderType::Rounded)
+            .border_style(Theme::border())
+            .title(Span::styled(" Footer ", Theme::panel_title()))
             .style(Style::default().bg(Theme::panel_background())),
         outer_layout[2],
     );
 
     Header::new("Jira Time Tracker").render(app, frame, title_horizontal_layout[1], dt);
-    TicketList::new().render(app, frame, body_layout[0], dt);
     UserInfo::new().render(app, frame, body_info_layout[1], dt);
     TicketInfo::new().render(app, frame, body_info_layout[0], dt);
 
     let slices = vec![
-        PieSlice::new("Spent", 45.0, Color::Green),
-        PieSlice::new("Remaining", 55.0, Color::White),
+        PieSlice::new("Spent", 45.0, Theme::chart_spent()),
+        PieSlice::new("Remaining", 55.0, Theme::chart_remaining()),
     ];
 
     let pie_chart = PieChart::new(slices).high_resolution(true);

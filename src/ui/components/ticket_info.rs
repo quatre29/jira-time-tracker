@@ -2,10 +2,10 @@ use std::time::Duration;
 use crossterm::event::KeyEvent;
 use ratatui::Frame;
 use ratatui::layout::Rect;
-use ratatui::prelude::{Modifier, Span, Style};
+use ratatui::prelude::{Span, Style};
 use ratatui::widgets::{Block, BorderType, Borders};
 use crate::app::App;
-use crate::events::app_event::{AppEvent, UiEvent};
+use crate::events::app_event::UiEvent;
 use crate::ui::components::Component;
 use crate::ui::theme::Theme;
 
@@ -16,26 +16,19 @@ pub struct TicketInfo {
 impl TicketInfo {
     pub fn new() -> Self {
         Self {
-            title: "Ticket Info".to_string(),
+            title: " Ticket Info ".to_string(),
         }
     }
 }
 
-
 impl Component for TicketInfo {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect, _dt: Duration) {
+    fn render(&self, _app: &App, frame: &mut Frame, area: Rect, _dt: Duration) {
         frame.render_widget(
             Block::default()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Plain)
-                .border_style(Style::default().fg(Theme::default_border_color()))
-                .title(Span::styled(
-                    &self.title,
-                    Style::default()
-                        .fg(Theme::primary_color())
-                        .bg(Theme::panel_background())
-                        .add_modifier(Modifier::BOLD),
-                ))
+                .border_type(BorderType::Rounded)
+                .border_style(Theme::border())
+                .title(Span::styled(&self.title, Theme::panel_title()))
                 .style(Style::default().bg(Theme::panel_background())),
             area,
         );

@@ -6,7 +6,7 @@ use crate::{
     app::App,
     ui::{components::component::Component, theme::Theme},
 };
-use crate::events::app_event::{UiEvent};
+use crate::events::app_event::UiEvent;
 
 pub struct Header {
     title: String,

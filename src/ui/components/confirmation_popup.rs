@@ -2,25 +2,25 @@ use std::time::Duration;
 use crossterm::event::{KeyEvent, KeyCode};
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use ratatui::prelude::{Modifier, Style};
-use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
+use ratatui::prelude::Style;
+use ratatui::widgets::{Block, Borders, Paragraph};
 use crate::app::App;
 use crate::events::app_event::{ActionEvent, AppEvent, UiEvent};
-use crate::ui::components::{Component};
+use crate::ui::components::Component;
 use crate::ui::theme::Theme;
 
-pub struct ConfirmationPopup  {
+pub struct ConfirmationPopup {
     confirmation_text: String,
     selected: usize,
     on_confirm: ActionEvent,
 }
 
-impl ConfirmationPopup  {
+impl ConfirmationPopup {
     pub fn new(confirmation_text: impl Into<String>, on_confirm: ActionEvent) -> Self {
         Self {
             confirmation_text: confirmation_text.into(),
             selected: 0,
-            on_confirm
+            on_confirm,
         }
     }
 }
@@ -39,7 +39,8 @@ impl Component for ConfirmationPopup {
 
         frame.render_widget(
             Paragraph::new(self.confirmation_text.clone())
-                .alignment(Alignment::Center),
+                .alignment(Alignment::Center)
+                .style(Theme::text()),
             layout[1],
         );
 
@@ -54,31 +55,40 @@ impl Component for ConfirmationPopup {
             ])
             .split(layout[2]);
 
-        let selected_style = Style::default()
-            .fg(Theme::focused_border_color())
-            .add_modifier(Modifier::BOLD);
-
-        let normal_style = Style::default()
-            .fg(Theme::default_border_color())
-            .add_modifier(Modifier::BOLD);
-
         let confirm_style = if self.selected == 0 {
-            selected_style
+            Theme::button_active()
         } else {
-            normal_style
+            Theme::button_inactive()
         };
 
         let cancel_style = if self.selected == 1 {
-            selected_style
+            Theme::button_active()
         } else {
-            normal_style
+            Theme::button_inactive()
+        };
+
+        let confirm_border = if self.selected == 0 {
+            Theme::border_focused()
+        } else {
+            Theme::border()
+        };
+
+        let cancel_border = if self.selected == 1 {
+            Theme::border_focused()
+        } else {
+            Theme::border()
         };
 
         frame.render_widget(
             Paragraph::new(" Confirm ")
                 .alignment(Alignment::Center)
                 .style(confirm_style)
-                .block(Block::default().borders(Borders::ALL).padding(ratatui::widgets::Padding::new(0, 0, 0, 0)),),
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_style(confirm_border)
+                        .style(Style::default().bg(Theme::popup_background())),
+                ),
             buttons[1],
         );
 
@@ -86,7 +96,12 @@ impl Component for ConfirmationPopup {
             Paragraph::new(" Cancel ")
                 .alignment(Alignment::Center)
                 .style(cancel_style)
-                .block(Block::default().borders(Borders::ALL).padding(ratatui::widgets::Padding::new(0, 0, 0, 0)),),
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .border_style(cancel_border)
+                        .style(Style::default().bg(Theme::popup_background())),
+                ),
             buttons[3],
         );
     }
@@ -104,10 +119,7 @@ impl Component for ConfirmationPopup {
                     Some(UiEvent::App(AppEvent::ClosePopup))
                 }
             },
-            _ => {
-                None
-            },
+            _ => None,
         }
-
     }
 }
