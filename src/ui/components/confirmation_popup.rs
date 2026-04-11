@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::RenderContext;
 use crate::events::app_event::{ActionEvent, AppEvent, UiEvent};
 use crate::ui::components::Button;
 use crate::ui::components::Component;
@@ -26,7 +26,7 @@ impl ConfirmationPopup {
 }
 
 impl Component for ConfirmationPopup {
-    fn render(&mut self, _app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
+    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, _dt: Duration) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([

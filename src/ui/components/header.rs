@@ -1,10 +1,7 @@
+use crate::app::RenderContext;
+use crate::ui::{components::component::Component, theme::Theme};
 use ratatui::{layout::Rect, widgets::Paragraph, Frame};
 use std::time::Duration;
-
-use crate::{
-    app::App,
-    ui::{components::component::Component, theme::Theme},
-};
 
 pub struct Header {
     title: String,
@@ -19,7 +16,7 @@ impl Header {
 }
 
 impl Component for Header {
-    fn render(&mut self, _app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
+    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, _dt: Duration) {
         let header = Paragraph::new(self.title.as_str())
             .style(Theme::title())
             .centered();

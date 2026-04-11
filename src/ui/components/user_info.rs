@@ -1,4 +1,4 @@
-use crate::app::{App, LoadState};
+use crate::app::{LoadState, RenderContext};
 use crate::ui::components::Component;
 use crate::ui::theme::Theme;
 use ratatui::layout::Rect;
@@ -22,8 +22,8 @@ impl UserInfo {
 }
 
 impl Component for UserInfo {
-    fn render(&mut self, app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
-        let content = match &app.user_state {
+    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, _dt: Duration) {
+        let content = match &context.user_state {
             LoadState::Loading => vec![Line::from("Loading user...").style(Theme::dimmed())],
 
             LoadState::Loaded(user) => vec![

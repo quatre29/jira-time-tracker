@@ -29,6 +29,14 @@ pub enum LoadState<T> {
     Error(String),
 }
 
+pub struct RenderContext<'a> {
+    pub tickets_state: &'a LoadState<Vec<JiraTicket>>,
+    pub user_state: &'a LoadState<JiraUser>,
+    pub selected_idx: Option<usize>,
+    pub focused: &'a ComponentName,
+    pub tick: u64,
+}
+
 pub struct App<'a> {
     pub exit: bool,
     pub selected_idx: Option<usize>,
@@ -110,7 +118,7 @@ impl<'a> App<'a> {
     where
         C: Component + 'static,
     {
-        let mut popup = Popup::new(title, content).size(40, 40);
+        let popup = Popup::new(title, content).size(40, 40);
 
         self.popup = PopupState::Active(Box::new(popup));
     }

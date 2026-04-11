@@ -7,11 +7,8 @@ use ratatui::{
 };
 use std::time::Duration;
 
-use crate::app::LoadState;
-use crate::{
-    app::App,
-    ui::{components::Component, theme::Theme},
-};
+use crate::app::{LoadState, RenderContext};
+use crate::ui::{components::Component, theme::Theme};
 
 pub struct TicketList {
     title: String,
@@ -26,7 +23,7 @@ impl TicketList {
 }
 
 impl Component for TicketList {
-    fn render(&mut self, app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
+    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, _dt: Duration) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_type(BorderType::HeavyTripleDashed)
@@ -40,7 +37,7 @@ impl Component for TicketList {
             ))
             .style(Style::default().bg(Theme::panel_background()));
 
-        match &app.tickets_state {
+        match &context.tickets_state {
             LoadState::Loading => {
                 let loading = ratatui::widgets::Paragraph::new("Loading tickets...")
                     .block(block)
@@ -69,7 +66,7 @@ impl Component for TicketList {
                     .block(block);
 
                 let mut state = ListState::default();
-                state.select(app.selected_idx);
+                state.select(context.selected_idx);
 
                 frame.render_stateful_widget(list, area, &mut state);
             }

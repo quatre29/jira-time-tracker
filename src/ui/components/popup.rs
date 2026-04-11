@@ -1,3 +1,6 @@
+use crate::app::RenderContext;
+use crate::events::app_event::UiEvent;
+use crate::ui::{components::Component, theme::Theme};
 use crossterm::event::KeyEvent;
 use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
@@ -7,12 +10,6 @@ use ratatui::{
 };
 use std::time::{Duration, Instant};
 use tachyonfx::{fx, Duration as FxDuration, EffectRenderer};
-
-use crate::events::app_event::UiEvent;
-use crate::{
-    app::App,
-    ui::{components::Component, theme::Theme},
-};
 
 pub struct Popup<'a, C: Component> {
     title: String,
@@ -87,7 +84,7 @@ impl<'a, C: Component> Popup<'a, C> {
 }
 
 impl<'a, C: Component> Component for Popup<'a, C> {
-    fn render(&mut self, app: &mut App, frame: &mut Frame, area: Rect, dt: Duration) {
+    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, dt: Duration) {
         frame.render_widget(
             Block::default().style(
                 Style::default()
@@ -109,7 +106,7 @@ impl<'a, C: Component> Component for Popup<'a, C> {
 
         let inner_area = block.inner(area);
 
-        self.content.render(app, frame, inner_area, dt);
+        self.content.render(frame, inner_area, context, dt);
 
         let mut fade_effect = fx::coalesce_from(
             Style::default(),

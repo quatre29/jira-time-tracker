@@ -1,11 +1,9 @@
+use crate::app::RenderContext;
 use crate::events::app_event::{ActionEvent, UiEvent};
 use crate::ui::components::BorderState;
 use crate::ui::components::Button;
+use crate::ui::components::{input::Input, Component};
 use crate::ui::theme::Theme;
-use crate::{
-    app::App,
-    ui::components::{input::Input, Component},
-};
 use chrono::Utc;
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::layout::Constraint::{Fill, Percentage};
@@ -113,7 +111,7 @@ impl<'a> TimeInputPopup<'a> {
 }
 
 impl<'a> Component for TimeInputPopup<'a> {
-    fn render(&mut self, _app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
+    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, _dt: Duration) {
         let input_area = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![

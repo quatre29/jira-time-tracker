@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::RenderContext;
 use crate::ui::components::Component;
 use crate::ui::theme::Theme;
 use ratatui::layout::Rect;
@@ -20,7 +20,7 @@ impl TicketInfo {
 }
 
 impl Component for TicketInfo {
-    fn render(&mut self, app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
+    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, _dt: Duration) {
         frame.render_widget(
             Block::default()
                 .borders(Borders::ALL)

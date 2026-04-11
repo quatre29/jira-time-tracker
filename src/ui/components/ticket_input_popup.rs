@@ -1,4 +1,4 @@
-use crate::app::App;
+use crate::app::RenderContext;
 use crate::events::app_event::{ActionEvent, UiEvent};
 use crate::ui::components::{Component, Input};
 use crossterm::event::{KeyCode, KeyEvent};
@@ -19,7 +19,7 @@ impl<'a> TicketInputPopup<'a> {
 }
 
 impl<'a> Component for TicketInputPopup<'a> {
-    fn render(&mut self, app: &mut App, frame: &mut Frame, area: Rect, dt: Duration) {
+    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, dt: Duration) {
         frame.render_widget(self.input.textarea.widget(), area);
     }
 

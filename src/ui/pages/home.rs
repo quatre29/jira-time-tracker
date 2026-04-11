@@ -1,3 +1,11 @@
+use crate::app::RenderContext;
+use crate::ui::components::ticket_info::TicketInfo;
+use crate::ui::components::user_info::UserInfo;
+use crate::ui::{
+    components::{Component, Header, TicketList},
+    matrix_rain,
+    theme::Theme,
+};
 use color_eyre::owo_colors::OwoColorize;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
@@ -9,18 +17,7 @@ use ratatui::{
 use std::time::Duration;
 use tui_piechart::{PieChart, PieSlice};
 
-use crate::ui::components::ticket_info::TicketInfo;
-use crate::ui::components::user_info::UserInfo;
-use crate::{
-    app::App,
-    ui::{
-        components::{Component, Header, TicketList},
-        matrix_rain,
-        theme::Theme,
-    },
-};
-
-pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
+pub fn render(frame: &mut Frame, context: &RenderContext, dt: Duration) {
     let area = frame.area();
 
     frame.render_widget(
@@ -82,7 +79,7 @@ pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
         title_horizontal_layout[1],
     ];
 
-    matrix_rain::render_matrix_rain(frame, app.tick, area, &matrix_rain_occluders, 1, 0.3, 24);
+    matrix_rain::render_matrix_rain(frame, context.tick, area, &matrix_rain_occluders, 1, 0.3, 24);
 
     frame.render_widget(
         Paragraph::new("Body 1").block(
@@ -114,10 +111,10 @@ pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
         outer_layout[2],
     );
 
-    Header::new("Jira Time Tracker").render(app, frame, title_horizontal_layout[1], dt);
-    TicketList::new().render(app, frame, body_layout[0], dt);
-    UserInfo::new().render(app, frame, body_info_layout[1], dt);
-    TicketInfo::new().render(app, frame, body_info_layout[0], dt);
+    Header::new("Jira Time Tracker").render(frame, title_horizontal_layout[1], context, dt);
+    TicketList::new().render(frame, body_layout[0], context, dt);
+    UserInfo::new().render(frame, body_info_layout[1], context, dt);
+    TicketInfo::new().render(frame, body_info_layout[0], context, dt);
 
     let slices = vec![
         PieSlice::new("Spent", 45.0, Color::Green),

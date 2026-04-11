@@ -1,5 +1,6 @@
+use crate::app::{App, RenderContext};
 use crate::{
-    app::{App, PopupState},
+    app::PopupState,
     ui::components::Component,
 };
 use ratatui::Frame;
@@ -12,10 +13,18 @@ pub mod theme;
 pub mod time_entry;
 
 pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
-    pages::home::render(frame, app, dt);
+    let context = RenderContext {
+        tickets_state: &app.tickets_state,
+        user_state: &app.user_state,
+        selected_idx: app.selected_idx,
+        focused: &app.focused,
+        tick: app.tick,
+    };
 
-    match &mut app.popup {
-        PopupState::Active(popup) => popup.render(app, frame, frame.area(), dt),
-        PopupState::None => {}
+    pages::home::render(frame, &context, dt);
+
+
+    if let PopupState::Active(ref mut popup) = app.popup {
+        popup.render(frame, frame.area(), &context, dt);
     }
 }
