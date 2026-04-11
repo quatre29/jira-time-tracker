@@ -1251,6 +1251,7 @@ dependencies = [
  "futures",
  "futures-timer",
  "ratatui",
+ "ratatui-core",
  "reqwest",
  "serde",
  "serde_json",

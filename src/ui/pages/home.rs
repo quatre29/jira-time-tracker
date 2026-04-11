@@ -1,14 +1,16 @@
-use std::time::Duration;
 use color_eyre::owo_colors::OwoColorize;
 use ratatui::{
-    Frame,
     layout::{Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, BorderType, Borders, Paragraph},
+    Frame,
 };
+use std::time::Duration;
 use tui_piechart::{PieChart, PieSlice};
 
+use crate::ui::components::ticket_info::TicketInfo;
+use crate::ui::components::user_info::UserInfo;
 use crate::{
     app::App,
     ui::{
@@ -17,10 +19,8 @@ use crate::{
         theme::Theme,
     },
 };
-use crate::ui::components::ticket_info::TicketInfo;
-use crate::ui::components::user_info::UserInfo;
 
-pub fn render(frame: &mut Frame, app: &App, dt: Duration) {
+pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
     let area = frame.area();
 
     frame.render_widget(

@@ -1,32 +1,32 @@
-use std::time::Duration;
-use crossterm::event::{KeyEvent, KeyCode};
-use ratatui::Frame;
-use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use ratatui::widgets::Paragraph;
 use crate::app::App;
 use crate::events::app_event::{ActionEvent, AppEvent, UiEvent};
+use crate::ui::components::Button;
 use crate::ui::components::Component;
-use crate::ui::components::Button::Button;
 use crate::ui::theme::Theme;
+use crossterm::event::{KeyCode, KeyEvent};
+use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use ratatui::widgets::Paragraph;
+use ratatui::Frame;
+use std::time::Duration;
 
-pub struct ConfirmationPopup  {
+pub struct ConfirmationPopup {
     confirmation_text: String,
     selected: usize,
     on_confirm: ActionEvent,
 }
 
-impl ConfirmationPopup  {
+impl ConfirmationPopup {
     pub fn new(confirmation_text: impl Into<String>, on_confirm: ActionEvent) -> Self {
         Self {
             confirmation_text: confirmation_text.into(),
             selected: 0,
-            on_confirm
+            on_confirm,
         }
     }
 }
 
 impl Component for ConfirmationPopup {
-    fn render(&self, _app: &App, frame: &mut Frame, area: Rect, _dt: Duration) {
+    fn render(&mut self, _app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -54,8 +54,8 @@ impl Component for ConfirmationPopup {
             ])
             .split(layout[2]);
 
-        frame.render_widget(Button::new("Confirm").theme(if self.selected == 0 {Theme::button_green()} else {Theme::button_blue()}), buttons[1]);
-        frame.render_widget(Button::new("Cancel").theme(if self.selected == 1 {Theme::button_green()} else {Theme::button_blue()}), buttons[3]);
+        frame.render_widget(Button::new("Confirm").theme(if self.selected == 0 { Theme::button_green() } else { Theme::button_blue() }), buttons[1]);
+        frame.render_widget(Button::new("Cancel").theme(if self.selected == 1 { Theme::button_green() } else { Theme::button_blue() }), buttons[3]);
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Option<UiEvent> {
@@ -63,18 +63,17 @@ impl Component for ConfirmationPopup {
             KeyCode::Left | KeyCode::Right | KeyCode::Tab => {
                 self.selected = (self.selected + 1) % 2;
                 None
-            },
+            }
             KeyCode::Enter => {
                 if self.selected == 0 {
                     Some(UiEvent::Action(self.on_confirm.clone()))
                 } else {
                     Some(UiEvent::App(AppEvent::ClosePopup))
                 }
-            },
+            }
             _ => {
                 None
-            },
+            }
         }
-
     }
 }

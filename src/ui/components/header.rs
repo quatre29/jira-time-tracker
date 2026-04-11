@@ -1,12 +1,10 @@
+use ratatui::{layout::Rect, widgets::Paragraph, Frame};
 use std::time::Duration;
-use crossterm::event::KeyEvent;
-use ratatui::{Frame, layout::Rect, widgets::Paragraph};
 
 use crate::{
     app::App,
     ui::{components::component::Component, theme::Theme},
 };
-use crate::events::app_event::{UiEvent};
 
 pub struct Header {
     title: String,
@@ -21,7 +19,7 @@ impl Header {
 }
 
 impl Component for Header {
-    fn render(&self, _app: &App, frame: &mut Frame, area: Rect, _dt: Duration) {
+    fn render(&mut self, _app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
         let header = Paragraph::new(self.title.as_str())
             .style(Theme::title())
             .centered();

@@ -1,6 +1,7 @@
 use derive_more::From;
 
 use crate::api::models::{JiraTicket, JiraUser};
+use crate::ui::components::ComponentName;
 
 #[derive(From)]
 pub enum AppEvent {
@@ -11,8 +12,10 @@ pub enum AppEvent {
     TicketLoaded(JiraTicket),
     UserLoaded(JiraUser),
     TimeLogged { ticket_key: String },
-    ApiError(String),
     TicketRemoved { ticket_key: String },
+    
+    ApiError(String),
+    UiError(UiError),
 
     ConfirmPopup,
     ClosePopup,
@@ -33,4 +36,19 @@ pub enum ActionEvent {
 pub enum UiEvent {
     App(AppEvent),
     Action(ActionEvent),
+}
+
+#[derive(Debug, Clone)]
+pub enum UiError {
+    Field {
+        component: ComponentName,
+        field_index: usize,
+        message: String,
+    },
+    Popup {
+        message: String,
+    },
+    Global {
+        message: String,
+    },
 }

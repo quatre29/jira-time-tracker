@@ -1,15 +1,13 @@
-use std::time::Duration;
-use crossterm::event::KeyEvent;
-use ratatui::Frame;
+use crate::app::{App, LoadState};
+use crate::ui::components::Component;
+use crate::ui::theme::Theme;
 use ratatui::layout::Rect;
 use ratatui::prelude::{Modifier, Span, Style};
 use ratatui::style::Color;
 use ratatui::text::Line;
 use ratatui::widgets::{Block, BorderType, Borders, Paragraph};
-use crate::app::{App, LoadState};
-use crate::events::app_event::{AppEvent, UiEvent};
-use crate::ui::components::Component;
-use crate::ui::theme::Theme;
+use ratatui::Frame;
+use std::time::Duration;
 
 pub struct UserInfo {
     title: String,
@@ -23,10 +21,9 @@ impl UserInfo {
     }
 }
 
-
 impl Component for UserInfo {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect, _dt: Duration) {
-       let content =  match &app.user_state {
+    fn render(&mut self, app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
+        let content = match &app.user_state {
             LoadState::Loading => vec![Line::from("Loading user...").style(Theme::dimmed())],
 
             LoadState::Loaded(user) => vec![

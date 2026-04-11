@@ -8,13 +8,14 @@ mod time_input_popup;
 mod ticket_input_popup;
 pub mod user_info;
 pub mod confirmation_popup;
-pub mod Button;
 pub mod button;
 
+pub use button::Button;
 pub use component::{Component, ComponentName};
+pub use confirmation_popup::ConfirmationPopup;
 pub use header::Header;
+pub use input::BorderState;
 pub use input::Input;
+pub use ticket_input_popup::TicketInputPopup;
 pub use ticket_list::TicketList;
 pub use time_input_popup::TimeInputPopup;
-pub use ticket_input_popup::TicketInputPopup;
-pub use confirmation_popup::ConfirmationPopup;

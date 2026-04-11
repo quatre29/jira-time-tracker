@@ -1,7 +1,13 @@
+use crate::ui::theme::Theme;
 use ratatui::style::Style;
 use ratatui::widgets::{Block, BorderType, Borders};
 use tui_textarea::TextArea;
-use crate::ui::theme::Theme;
+
+pub enum BorderState {
+    Default,
+    Selected,
+    Error,
+}
 
 pub struct Input<'a> {
     pub textarea: TextArea<'a>,
@@ -31,17 +37,18 @@ impl<'a> Input<'a> {
         self
     }
 
-    pub fn border_style(mut self, selected: bool) -> Self {
-        self.set_border_style(selected);
+    pub fn border_style(mut self, state: BorderState) -> Self {
+        self.set_border_style(state);
 
         self
     }
 
-    pub fn set_border_style(&mut self, selected: bool) {
+    pub fn set_border_style(&mut self, state: BorderState) {
         self.textarea.set_block(Block::default().borders(Borders::ALL).border_type(BorderType::Plain).border_style(
-            match selected {
-                true => Style::default().fg(Theme::focused_border_color()),
-                false => Style::default().fg(Theme::default_border_color()),
+            match state {
+                BorderState::Selected => Style::default().fg(Theme::focused_border_color()),
+                BorderState::Default => Style::default().fg(Theme::default_border_color()),
+                BorderState::Error => Style::default().fg(Theme::error_border_color()),
             }
         ));
     }

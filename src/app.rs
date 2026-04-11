@@ -10,13 +10,13 @@ use crate::api::config::JiraConfig;
 use crate::api::jira_client::JiraClient;
 use crate::api::models::{JiraTicket, JiraUser};
 use crate::app::LoadState::{Loaded, Loading};
-use crate::events::app_event::{ActionEvent, UiEvent};
 use crate::events::app_event::AppEvent;
+use crate::events::app_event::{ActionEvent, UiError, UiEvent};
 use crate::events::dispatcher::dispatch;
 use crate::events::effect::Effect;
 use crate::storage::storage::Storage;
 use crate::ui::components::popup::Popup;
-use crate::ui::components::{Component, ComponentName, TimeInputPopup, TicketInputPopup, ConfirmationPopup};
+use crate::ui::components::{Component, ComponentName, ConfirmationPopup, TicketInputPopup, TimeInputPopup};
 
 pub enum PopupState<'a> {
     None,
@@ -34,11 +34,12 @@ pub struct App<'a> {
     pub selected_idx: Option<usize>,
     pub popup: PopupState<'a>,
     pub focused: ComponentName,
-    // pub error: Option<String>,
     pub storage: Storage,
     pub jira_client: JiraClient,
     pub app_tx: Sender<AppEvent>,
     pub tick: u64,
+
+    pub ui_errors: Vec<UiError>,
 
     pub tickets_state: LoadState<Vec<JiraTicket>>,
     pub user_state: LoadState<JiraUser>,
@@ -71,10 +72,11 @@ impl<'a> App<'a> {
             popup: PopupState::None,
             focused: ComponentName::default(),
             tick: 0,
-            // error: None,
             storage,
             jira_client,
             app_tx,
+
+            ui_errors: vec![],
 
             tickets_state: Loading,
             user_state: Loading,
@@ -104,11 +106,11 @@ impl<'a> App<'a> {
         }
     }
 
-    pub fn show_popup<C>(&mut self, title: &str, content:C)
+    pub fn show_popup<C>(&mut self, title: &str, content: C)
     where
-    C: Component + 'static
+        C: Component + 'static,
     {
-        let popup = Popup::new(title, content).size(40, 40);
+        let mut popup = Popup::new(title, content).size(40, 40);
 
         self.popup = PopupState::Active(Box::new(popup));
     }
@@ -180,7 +182,7 @@ impl<'a> App<'a> {
                 self.handle_key_event(key).unwrap_or_default();
 
                 vec![]
-            },
+            }
 
             AppEvent::TicketsLoaded(tickets) => {
                 self.tickets_state = Loaded(tickets);
@@ -201,10 +203,10 @@ impl<'a> App<'a> {
                         } else {
                             tickets.push(ticket);
                         }
-                    },
+                    }
                     None => {
                         self.tickets_state = Loaded(vec![ticket])
-                    },
+                    }
                 };
 
                 self.close_popup();
@@ -217,12 +219,12 @@ impl<'a> App<'a> {
             }
 
             AppEvent::TicketRemoved { ticket_key } => {
-               if let Some(tickets) = self.tickets_mut() {
-                   tickets.retain(|ticket| ticket.key != ticket_key);
-               }
+                if let Some(tickets) = self.tickets_mut() {
+                    tickets.retain(|ticket| ticket.key != ticket_key);
+                }
 
                 vec![]
-            },
+            }
 
             AppEvent::Tick => {
                 self.on_tick();
@@ -233,13 +235,21 @@ impl<'a> App<'a> {
             AppEvent::ClosePopup => {
                 self.close_popup();
                 vec![]
-            },
+            }
 
             AppEvent::ConfirmPopup => {
                 vec![]
-            },
+            }
 
-            // AppEvent::ApiError(err) => self.error = Some(err),
+            AppEvent::UiError(err) => {
+                self.ui_errors.push(err);
+                vec![]
+            }
+
+            AppEvent::ApiError(err) => {
+                self.ui_errors.push(UiError::Global { message: err });
+                vec![]
+            }
             _ => {
                 vec![]
             }
@@ -254,7 +264,7 @@ impl<'a> App<'a> {
         self.focused = component_name;
     }
 
-    fn draw(&self, frame: &mut Frame, dt: Duration) {
+    fn draw(&mut self, frame: &mut Frame, dt: Duration) {
         crate::ui::render(frame, self, dt);
     }
 
@@ -326,7 +336,7 @@ impl<'a> App<'a> {
             }
 
             KeyCode::Char('d') => {
-                let ticket_key =  self.selected_ticket().unwrap().key.clone();
+                let ticket_key = self.selected_ticket().unwrap().key.clone();
 
                 self.show_popup("Confirmation", ConfirmationPopup::new("Are you sure you want to remove this ticket?", ActionEvent::RemoveTicket { ticket_key }));
                 self.focus(ComponentName::ConfirmationPopup);
@@ -377,7 +387,7 @@ impl<'a> App<'a> {
                         }
                     }
                 }
-            },
+            }
             PopupState::None => {}
         }
 

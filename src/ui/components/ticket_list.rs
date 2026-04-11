@@ -1,19 +1,17 @@
-use std::time::Duration;
-use crossterm::event::KeyEvent;
 use ratatui::{
-    Frame,
     layout::Rect,
     style::{Color, Modifier, Style},
     text::Span,
     widgets::{Block, BorderType, Borders, List, ListItem, ListState},
+    Frame,
 };
+use std::time::Duration;
 
+use crate::app::LoadState;
 use crate::{
     app::App,
     ui::{components::Component, theme::Theme},
 };
-use crate::app::LoadState;
-use crate::events::app_event::{AppEvent, UiEvent};
 
 pub struct TicketList {
     title: String,
@@ -28,7 +26,7 @@ impl TicketList {
 }
 
 impl Component for TicketList {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect, _dt: Duration) {
+    fn render(&mut self, app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
         let block = Block::default()
             .borders(Borders::ALL)
             .border_type(BorderType::HeavyTripleDashed)
@@ -49,7 +47,7 @@ impl Component for TicketList {
                     .style(Theme::dimmed());
 
                 frame.render_widget(loading, area);
-            },
+            }
             LoadState::Loaded(tickets) => {
                 if tickets.is_empty() {
                     let empty = ratatui::widgets::Paragraph::new("No tickets found")
@@ -62,9 +60,7 @@ impl Component for TicketList {
 
                 let items: Vec<ListItem> = tickets
                     .iter()
-                    .map(|ticket| {
-                        ListItem::new(format!("{} - {}", ticket.key, ticket.title))
-                    })
+                    .map(|ticket| ListItem::new(format!("{} - {}", ticket.key, ticket.title)))
                     .collect();
 
                 let list = List::new(items)
@@ -76,7 +72,7 @@ impl Component for TicketList {
                 state.select(app.selected_idx);
 
                 frame.render_stateful_widget(list, area, &mut state);
-            },
+            }
             LoadState::Error(err) => {
                 let error = ratatui::widgets::Paragraph::new(err.clone())
                     .block(block)

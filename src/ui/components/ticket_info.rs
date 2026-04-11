@@ -1,13 +1,11 @@
-use std::time::Duration;
-use crossterm::event::KeyEvent;
-use ratatui::Frame;
+use crate::app::App;
+use crate::ui::components::Component;
+use crate::ui::theme::Theme;
 use ratatui::layout::Rect;
 use ratatui::prelude::{Modifier, Span, Style};
 use ratatui::widgets::{Block, BorderType, Borders};
-use crate::app::App;
-use crate::events::app_event::{AppEvent, UiEvent};
-use crate::ui::components::Component;
-use crate::ui::theme::Theme;
+use ratatui::Frame;
+use std::time::Duration;
 
 pub struct TicketInfo {
     title: String,
@@ -21,9 +19,8 @@ impl TicketInfo {
     }
 }
 
-
 impl Component for TicketInfo {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect, _dt: Duration) {
+    fn render(&mut self, app: &mut App, frame: &mut Frame, area: Rect, _dt: Duration) {
         frame.render_widget(
             Block::default()
                 .borders(Borders::ALL)

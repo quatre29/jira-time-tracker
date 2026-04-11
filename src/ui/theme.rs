@@ -25,6 +25,10 @@ impl Theme {
         Color::Rgb(0x44, 0x44, 0x66)
     }
 
+    pub fn error_border_color() -> Color {
+        Color::Rgb(255, 85, 85)
+    }
+
     pub fn focused_border_color() -> Color {
         Color::Rgb(57, 255, 20)
     }

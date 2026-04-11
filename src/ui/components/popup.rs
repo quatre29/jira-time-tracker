@@ -1,21 +1,18 @@
 use crossterm::event::KeyEvent;
 use ratatui::{
-    Frame,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     widgets::{Block, BorderType, Clear},
+    Frame,
 };
 use std::time::{Duration, Instant};
-use tachyonfx::{Duration as FxDuration, EffectRenderer, fx};
+use tachyonfx::{fx, Duration as FxDuration, EffectRenderer};
 
+use crate::events::app_event::UiEvent;
 use crate::{
     app::App,
-    ui::{
-        components::Component,
-        theme::Theme,
-    },
+    ui::{components::Component, theme::Theme},
 };
-use crate::events::app_event::UiEvent;
 
 pub struct Popup<'a, C: Component> {
     title: String,
@@ -90,10 +87,12 @@ impl<'a, C: Component> Popup<'a, C> {
 }
 
 impl<'a, C: Component> Component for Popup<'a, C> {
-    fn render(&self, app: &App, frame: &mut Frame, area: Rect, dt: Duration) {
+    fn render(&mut self, app: &mut App, frame: &mut Frame, area: Rect, dt: Duration) {
         frame.render_widget(
             Block::default().style(
-                Style::default().bg(Color::Black).add_modifier(Modifier::DIM)
+                Style::default()
+                    .bg(Color::Black)
+                    .add_modifier(Modifier::DIM),
             ),
             area,
         );
