@@ -23,3 +23,4 @@ tokio = { version = "1.50.0", features = ["full"] }
 tui-piechart = {git = "https://github.com/matthewhaynesonline/tui-piechart.git", branch = "ratatui-v30"}
 tui-textarea-2 = "0.9.1"
 ratatui-core = "0.1.0"
+regex = "1.12.3"

@@ -44,6 +44,12 @@ impl<'a> TimeInputPopup<'a> {
         }
     }
 
+    fn remove_error_on_focus(&mut self) {
+        if let Focus::Input(i) = self.focus {
+            self.errors[i] = None;
+        }
+    }
+
     fn update_focus(&mut self) {
         for (i, input) in self.inputs.iter_mut().enumerate() {
             input.set_border_style(if matches!(self.focus, Focus::Input(idx) if idx == i) {
@@ -86,6 +92,8 @@ impl<'a> TimeInputPopup<'a> {
             Focus::Input(_) => Focus::Button,
             Focus::Button => Focus::Input(0),
         };
+
+        self.remove_error_on_focus();
         self.update_focus();
     }
 
@@ -96,10 +104,50 @@ impl<'a> TimeInputPopup<'a> {
             Focus::Button => Focus::Input(self.inputs.len() - 1),
         };
 
+        self.remove_error_on_focus();
         self.update_focus();
     }
     pub fn process_multi_lines_input(&self, input: &[String]) -> String {
         input.join("\n")
+    }
+
+    pub fn parse_jira_time_to_seconds(&self, input: &str) -> Option<u64> {
+        let input = input.trim();
+        if input.is_empty() { return None; }
+
+        let re = regex::Regex::new(r"(?i)(\d+)([dhm])").unwrap();
+
+        let mut total_seconds = 0;
+        let mut last_magnitude = 3;
+        let mut chars_consumed = 0;
+
+        for mat in re.find_iter(input) {
+            chars_consumed += mat.as_str().len();
+
+            let caps = re.captures(mat.as_str())?;
+            let value: u64 = caps[1].parse().ok()?;
+            let unit = caps[2].to_lowercase();
+
+            let (magnitude, seconds) = match unit.as_str() {
+                "d" => (2, value * 8 * 3600),
+                "h" => (1, value * 3600),
+                "m" => (0, value * 60),
+                _ => return None,
+            };
+
+            if magnitude >= last_magnitude {
+                return None;
+            }
+
+            total_seconds += seconds;
+            last_magnitude = magnitude;
+        }
+
+        if chars_consumed != input.replace(" ", "").len() {
+            return None;
+        }
+
+        if total_seconds > 0 { Some(total_seconds) } else { None }
     }
 
     pub fn is_time_input_valid(&self, time_input: &str) -> bool {
@@ -165,15 +213,16 @@ impl<'a> Component for TimeInputPopup<'a> {
                 if matches!(self.focus, Focus::Button) {
                     let time = self.inputs[0].textarea.lines().first().unwrap_or(&"".to_string()).clone();
                     let date = self.inputs[1].textarea.lines().first().unwrap_or(&"".to_string()).clone();
+                    let parsed_time = self.parse_jira_time_to_seconds(&time);
 
                     let mut has_error = false;
 
                     // NOTE: reset errors
                     self.errors = vec![None, None, None];
 
-                    if !self.is_time_input_valid(&time) {
+                    if parsed_time.is_none() {
                         self.errors[0] = Some("Please input valid time input".to_string());
-                        has_error = true;
+                        has_error = true
                     }
 
                     if !self.is_date_input_valid(&date) {
@@ -190,11 +239,12 @@ impl<'a> Component for TimeInputPopup<'a> {
 
                     return Some(UiEvent::Action(ActionEvent::LogTime {
                         ticket_key: self.ticket_key.clone(),
-                        time_spent_seconds: 2000,
+                        time_spent_seconds: parsed_time?,
                         started,
                         description: processed_description,
                     }));
                 }
+
 
                 if let Focus::Input(2) = self.focus {
                     if let Some(input) = self.inputs.get_mut(2) {

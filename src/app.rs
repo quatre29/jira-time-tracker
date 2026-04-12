@@ -114,11 +114,11 @@ impl<'a> App<'a> {
         }
     }
 
-    pub fn show_popup<C>(&mut self, title: &str, content: C)
+    pub fn show_popup<C>(&mut self, title: &str, width: u16, height: u16, content: C)
     where
         C: Component + 'static,
     {
-        let popup = Popup::new(title, content).size(40, 40);
+        let popup = Popup::new(title, content).size(width, height);
 
         self.popup = PopupState::Active(Box::new(popup));
     }
@@ -339,14 +339,14 @@ impl<'a> App<'a> {
         match key.code {
             KeyCode::Char('q') => self.exit = true,
             KeyCode::Char('t') if matches!(self.popup, PopupState::None) => {
-                self.show_popup("Add Ticket", TicketInputPopup::new());
+                self.show_popup("Add Ticket", 20, 10, TicketInputPopup::new());
                 self.focus(ComponentName::TicketInputPopup);
             }
 
             KeyCode::Char('d') => {
                 let ticket_key = self.selected_ticket().unwrap().key.clone();
 
-                self.show_popup("Confirmation", ConfirmationPopup::new("Are you sure you want to remove this ticket?", ActionEvent::RemoveTicket { ticket_key }));
+                self.show_popup("Confirmation", 40, 20, ConfirmationPopup::new("Are you sure you want to remove this ticket?", ActionEvent::RemoveTicket { ticket_key }));
                 self.focus(ComponentName::ConfirmationPopup);
             }
 
@@ -366,7 +366,7 @@ impl<'a> App<'a> {
                 let selected_ticket = self.selected_ticket();
 
                 if let Some(selected_ticket) = selected_ticket {
-                    self.show_popup(selected_ticket.title.clone().as_str(), TimeInputPopup::new(self.selected_ticket().unwrap().key.clone()));
+                    self.show_popup(selected_ticket.title.clone().as_str(), 40, 40, TimeInputPopup::new(self.selected_ticket().unwrap().key.clone()));
                     self.focus(ComponentName::TimeInputPopup);
                 }
             }

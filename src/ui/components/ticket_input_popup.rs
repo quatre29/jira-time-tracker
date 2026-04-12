@@ -2,7 +2,7 @@ use crate::app::RenderContext;
 use crate::events::app_event::{ActionEvent, UiEvent};
 use crate::ui::components::{Component, Input};
 use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::layout::Rect;
+use ratatui::layout::{Constraint, Layout, Rect};
 use ratatui::Frame;
 use std::time::Duration;
 
@@ -19,8 +19,15 @@ impl<'a> TicketInputPopup<'a> {
 }
 
 impl<'a> Component for TicketInputPopup<'a> {
-    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, dt: Duration) {
-        frame.render_widget(self.input.textarea.widget(), area);
+    fn render(&mut self, frame: &mut Frame, area: Rect, _context: &RenderContext, _dt: Duration) {
+        let [_, input_area, _] = Layout::vertical([
+            Constraint::Fill(1),
+            Constraint::Length(3),
+            Constraint::Fill(1),
+        ])
+        .areas(area);
+
+        frame.render_widget(&self.input.textarea, input_area);
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Option<UiEvent> {

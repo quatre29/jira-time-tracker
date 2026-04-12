@@ -80,9 +80,6 @@ impl Component for ConfirmationPopup {
                 .state(cancel_state),
             buttons[3],
         );
-
-        // frame.render_widget(Button::new("Confirm").theme(if self.selected == 0 { Theme::button_primary() } else { Theme::button_cancel() }), buttons[1]);
-        // frame.render_widget(Button::new("Cancel").theme(if self.selected == 1 { Theme::button_primary() } else { Theme::button_cancel() }), buttons[3]);
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Option<UiEvent> {

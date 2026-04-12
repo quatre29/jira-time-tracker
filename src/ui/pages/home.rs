@@ -2,14 +2,14 @@ use crate::app::RenderContext;
 use crate::ui::components::ticket_info::TicketInfo;
 use crate::ui::components::user_info::UserInfo;
 use crate::ui::{
-    components::{Component, Footer, Header, TicketList},
+    components::{Component, Header, TicketList},
     matrix_rain,
     theme::Theme,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::Style,
-    text::Span,
+    style::Style
+    ,
     widgets::Block,
     Frame,
 };
@@ -22,12 +22,13 @@ pub fn footer_area(area: Rect) -> Rect {
         Constraint::Percentage(70),
         Constraint::Fill(1),
     ])
-    .split(area);
+        .split(area);
 
     Layout::vertical([
         Constraint::Percentage(10),
-        Constraint::Percentage(70),
-        Constraint::Percentage(20),
+        Constraint::Fill(1),
+        Constraint::Length(5),
+        Constraint::Length(2),
     ])
     .split(horizontal[1])[2]
 }
@@ -51,10 +52,11 @@ pub fn render(frame: &mut Frame, context: &RenderContext, dt: Duration) {
 
     let outer_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(vec![
+        .constraints([
             Constraint::Percentage(10),
-            Constraint::Percentage(70),
-            Constraint::Percentage(20),
+            Constraint::Fill(1),
+            Constraint::Length(5),
+            Constraint::Length(2),
         ])
         .split(horizontal[1]);
 
