@@ -1,7 +1,7 @@
 use crate::app::{App, RenderContext};
 use crate::{
     app::PopupState,
-    ui::components::Component,
+    ui::components::{Component, Footer},
 };
 use ratatui::Frame;
 use std::time::Duration;
@@ -23,8 +23,11 @@ pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
 
     pages::home::render(frame, &context, dt);
 
-
     if let PopupState::Active(ref mut popup) = app.popup {
         popup.render(frame, frame.area(), &context, dt);
     }
+
+    // Render footer last so it always appears above the popup dim overlay
+    let footer_area = pages::home::footer_area(frame.area());
+    Footer::new().render(frame, footer_area, &context, dt);
 }

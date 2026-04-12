@@ -1,9 +1,10 @@
+use crate::ui::theme::Theme;
 use ratatui::{
-    Frame,
     layout::Rect,
     style::{Color, Style},
     text::Span,
     widgets::Paragraph,
+    Frame,
 };
 
 /// Matrix rain background — falling columns of characters.
@@ -23,7 +24,7 @@ pub fn render_matrix_rain(
         area,
         occluders,
         col_step,
-        Color::Rgb(0x00, 0xff, 0x00),
+        Theme::rain_color(),
         rain_speed,
         rain_trail,
     );
@@ -80,7 +81,7 @@ fn render_matrix_rain_colored(
             // Extract base RGB from the color parameter.
             let (cr, cg, cb) = match color {
                 Color::Rgb(r, g, b) => (r as f32, g as f32, b as f32),
-                _ => (0.0, 255.0, 0.0), // fallback green
+                _ => (68.0, 136.0, 204.0), // fallback blue-violet
             };
             let (r, g, b_val) = if dist == 0 {
                 // Head: bright, washed-out version of the color
@@ -119,7 +120,7 @@ fn render_matrix_rain_colored(
                     ch.to_string(),
                     Style::default()
                         .fg(Color::Rgb(r, g, b_val))
-                        .bg(Color::Rgb(0x06, 0x06, 0x0a)),
+                        .bg(Theme::rain_bg()),
                 )),
                 Rect {
                     x,

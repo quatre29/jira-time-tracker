@@ -1,5 +1,6 @@
 use crate::app::RenderContext;
 use crate::events::app_event::{ActionEvent, AppEvent, UiEvent};
+use crate::ui::components::button::ButtonState;
 use crate::ui::components::Button;
 use crate::ui::components::Component;
 use crate::ui::theme::Theme;
@@ -26,7 +27,7 @@ impl ConfirmationPopup {
 }
 
 impl Component for ConfirmationPopup {
-    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, _dt: Duration) {
+    fn render(&mut self, frame: &mut Frame, area: Rect, _context: &RenderContext, _dt: Duration) {
         let layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -46,16 +47,42 @@ impl Component for ConfirmationPopup {
         let buttons = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([
-                Constraint::Percentage(20),
-                Constraint::Percentage(28),
-                Constraint::Percentage(4),
-                Constraint::Percentage(28),
-                Constraint::Percentage(20),
+                Constraint::Fill(1),
+                Constraint::Length(20),
+                Constraint::Length(4),
+                Constraint::Length(20),
+                Constraint::Fill(1),
             ])
             .split(layout[2]);
 
-        frame.render_widget(Button::new("Confirm").theme(if self.selected == 0 { Theme::button_green() } else { Theme::button_blue() }), buttons[1]);
-        frame.render_widget(Button::new("Cancel").theme(if self.selected == 1 { Theme::button_green() } else { Theme::button_blue() }), buttons[3]);
+        let confirm_state = if self.selected == 0 {
+            ButtonState::Selected
+        } else {
+            ButtonState::Normal
+        };
+
+        let cancel_state = if self.selected == 1 {
+            ButtonState::Selected
+        } else {
+            ButtonState::Normal
+        };
+
+        frame.render_widget(
+            Button::new("Confirm")
+                .theme(Theme::button_confirm())
+                .state(confirm_state),
+            buttons[1],
+        );
+
+        frame.render_widget(
+            Button::new("Cancel")
+                .theme(Theme::button_cancel())
+                .state(cancel_state),
+            buttons[3],
+        );
+
+        // frame.render_widget(Button::new("Confirm").theme(if self.selected == 0 { Theme::button_primary() } else { Theme::button_cancel() }), buttons[1]);
+        // frame.render_widget(Button::new("Cancel").theme(if self.selected == 1 { Theme::button_primary() } else { Theme::button_cancel() }), buttons[3]);
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Option<UiEvent> {

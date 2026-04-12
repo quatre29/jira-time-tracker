@@ -1,21 +1,19 @@
-use std::time::Duration;
+use crate::ui::theme::{ButtonTheme, Theme};
 use ratatui::buffer::Buffer;
-use ratatui::Frame;
 use ratatui::layout::Rect;
 use ratatui::prelude::Widget;
 use ratatui::style::{Color, Style};
 use ratatui::text::Line;
-use crate::ui::theme::{ButtonTheme, Theme};
 
 #[derive(Debug, Clone)]
 pub struct Button<'a> {
     label: Line<'a>,
     theme: ButtonTheme,
-    state: State
+    state: ButtonState,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum State {
+pub enum ButtonState {
     Normal,
     Selected,
     Active,
@@ -25,8 +23,8 @@ impl<'a> Button<'a> {
     pub fn new<T: Into<Line<'a>>>(label: T) -> Self {
         Button {
             label: label.into(),
-            theme: Theme::button_blue(),
-            state: State::Normal,
+            theme: Theme::button_cancel(),
+            state: ButtonState::Normal,
         }
     }
 
@@ -35,7 +33,7 @@ impl<'a> Button<'a> {
         self
     }
 
-    pub const fn state(mut self, state: State) -> Self {
+    pub const fn state(mut self, state: ButtonState) -> Self {
         self.state = state;
         self
     }
@@ -44,10 +42,26 @@ impl<'a> Button<'a> {
 impl Button<'_> {
     const fn colors(&self) -> (Color, Color, Color, Color) {
         let theme = self.theme;
+
         match self.state {
-            State::Normal => (theme.background, theme.text, theme.shadow, theme.highlight),
-            State::Selected => (theme.highlight, theme.text, theme.shadow, theme.highlight),
-            State::Active => (theme.background, theme.text, theme.highlight, theme.shadow),
+            ButtonState::Normal => (
+                theme.background,
+                theme.text,
+                theme.shadow,
+                theme.highlight,
+            ),
+            ButtonState::Selected => (
+                theme.selected_background,
+                theme.text,
+                theme.shadow,
+                theme.highlight,
+            ),
+            ButtonState::Active => (
+                theme.shadow,
+                theme.text,
+                theme.highlight,
+                theme.shadow,
+            ),
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::app::RenderContext;
 use crate::ui::components::Component;
 use crate::ui::theme::Theme;
 use ratatui::layout::Rect;
-use ratatui::prelude::{Modifier, Span, Style};
+use ratatui::prelude::{Span, Style};
 use ratatui::widgets::{Block, BorderType, Borders};
 use ratatui::Frame;
 use std::time::Duration;
@@ -14,7 +14,7 @@ pub struct TicketInfo {
 impl TicketInfo {
     pub fn new() -> Self {
         Self {
-            title: "Ticket Info".to_string(),
+            title: " Ticket Info ".to_string(),
         }
     }
 }
@@ -24,15 +24,9 @@ impl Component for TicketInfo {
         frame.render_widget(
             Block::default()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Plain)
-                .border_style(Style::default().fg(Theme::default_border_color()))
-                .title(Span::styled(
-                    &self.title,
-                    Style::default()
-                        .fg(Theme::primary_color())
-                        .bg(Theme::panel_background())
-                        .add_modifier(Modifier::BOLD),
-                ))
+                .border_type(BorderType::Rounded)
+                .border_style(Theme::border_default())
+                .title(Span::styled(&self.title, Theme::panel_title()))
                 .style(Style::default().bg(Theme::panel_background())),
             area,
         );

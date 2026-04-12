@@ -1,4 +1,5 @@
 mod component;
+mod footer;
 mod header;
 mod input;
 pub mod popup;
@@ -13,6 +14,7 @@ pub mod button;
 pub use button::Button;
 pub use component::{Component, ComponentName};
 pub use confirmation_popup::ConfirmationPopup;
+pub use footer::Footer;
 pub use header::Header;
 pub use input::BorderState;
 pub use input::Input;

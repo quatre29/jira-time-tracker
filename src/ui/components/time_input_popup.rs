@@ -1,12 +1,13 @@
 use crate::app::RenderContext;
 use crate::events::app_event::{ActionEvent, UiEvent};
+use crate::ui::components::button::ButtonState;
 use crate::ui::components::BorderState;
 use crate::ui::components::Button;
 use crate::ui::components::{input::Input, Component};
 use crate::ui::theme::Theme;
 use chrono::Utc;
 use crossterm::event::{KeyCode, KeyEvent};
-use ratatui::layout::Constraint::{Fill, Percentage};
+use ratatui::layout::Constraint::{Fill, Length, Percentage};
 use ratatui::layout::{Direction, Layout};
 use ratatui::prelude::Style;
 use ratatui::style::Color;
@@ -111,7 +112,7 @@ impl<'a> TimeInputPopup<'a> {
 }
 
 impl<'a> Component for TimeInputPopup<'a> {
-    fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, _dt: Duration) {
+    fn render(&mut self, frame: &mut Frame, area: Rect, _context: &RenderContext, _dt: Duration) {
         let input_area = Layout::default()
             .direction(Direction::Vertical)
             .constraints(vec![
@@ -125,30 +126,27 @@ impl<'a> Component for TimeInputPopup<'a> {
 
         let h_button_area = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints(vec![
-                Fill(1),
-                Percentage(33),
-                Fill(1),
-            ]).split(input_area[self.inputs.len()]);
+            .constraints([Fill(1), Length(20), Fill(1)])
+            .split(input_area[self.inputs.len()]);
 
         let v_button_area = Layout::default()
             .direction(Direction::Vertical)
-            .constraints(vec![
-                Fill(1),
-                Percentage(33),
-                Fill(1),
-            ]).split(h_button_area[1]);
+            .constraints([Fill(1), Length(3), Fill(1)])
+            .split(h_button_area[1]);
 
 
         let is_button_selected = matches!(self.focus, Focus::Button);
 
+        let button_state = if is_button_selected {
+            ButtonState::Selected
+        } else {
+            ButtonState::Normal
+        };
+
         frame.render_widget(
             Button::new("Log Time")
-                .theme(if is_button_selected {
-                    Theme::button_green()
-                } else {
-                    Theme::button_blue()
-                }),
+                .theme(Theme::button_primary())
+                .state(button_state),
             v_button_area[1],
         );
     }

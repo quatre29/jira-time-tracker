@@ -1,6 +1,6 @@
 use ratatui::{
     layout::Rect,
-    style::{Color, Modifier, Style},
+    style::Style,
     text::Span,
     widgets::{Block, BorderType, Borders, List, ListItem, ListState},
     Frame,
@@ -17,7 +17,7 @@ pub struct TicketList {
 impl TicketList {
     pub fn new() -> Self {
         Self {
-            title: "Ticket List".to_string(),
+            title: " Ticket List ".to_string(),
         }
     }
 }
@@ -26,20 +26,14 @@ impl Component for TicketList {
     fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, _dt: Duration) {
         let block = Block::default()
             .borders(Borders::ALL)
-            .border_type(BorderType::HeavyTripleDashed)
-            .border_style(Style::default().fg(Theme::default_border_color()))
-            .title(Span::styled(
-                &self.title,
-                Style::default()
-                    .fg(Theme::primary_color())
-                    .bg(Theme::panel_background())
-                    .add_modifier(Modifier::BOLD),
-            ))
+            .border_type(BorderType::Rounded)
+            .border_style(Theme::border_default())
+            .title(Span::styled(&self.title, Theme::panel_title()))
             .style(Style::default().bg(Theme::panel_background()));
 
         match &context.tickets_state {
             LoadState::Loading => {
-                let loading = ratatui::widgets::Paragraph::new("Loading tickets...")
+                let loading = ratatui::widgets::Paragraph::new("⟳ Loading tickets...")
                     .block(block)
                     .style(Theme::dimmed());
 
@@ -57,12 +51,17 @@ impl Component for TicketList {
 
                 let items: Vec<ListItem> = tickets
                     .iter()
-                    .map(|ticket| ListItem::new(format!("{} - {}", ticket.key, ticket.title)))
+                    .map(|ticket| {
+                        ListItem::new(Span::styled(
+                            format!("{} - {}", ticket.key, ticket.title),
+                            Theme::text(),
+                        ))
+                    })
                     .collect();
 
                 let list = List::new(items)
                     .highlight_style(Theme::selected())
-                    .highlight_symbol(">> ")
+                    .highlight_symbol("▸")
                     .block(block);
 
                 let mut state = ListState::default();
@@ -73,7 +72,7 @@ impl Component for TicketList {
             LoadState::Error(err) => {
                 let error = ratatui::widgets::Paragraph::new(err.clone())
                     .block(block)
-                    .style(Style::default().fg(Color::Red));
+                    .style(Theme::error());
 
                 frame.render_widget(error, area);
             }

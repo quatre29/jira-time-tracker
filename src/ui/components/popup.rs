@@ -1,10 +1,11 @@
 use crate::app::RenderContext;
 use crate::events::app_event::UiEvent;
-use crate::ui::{components::Component, theme::Theme};
+use crate::ui::components::Component;
+use crate::ui::theme::Theme;
 use crossterm::event::KeyEvent;
 use ratatui::{
     layout::{Alignment, Constraint, Layout, Rect},
-    style::{Color, Modifier, Style, Stylize},
+    style::{Modifier, Style, Stylize},
     widgets::{Block, BorderType, Clear},
     Frame,
 };
@@ -13,7 +14,6 @@ use tachyonfx::{fx, Duration as FxDuration, EffectRenderer};
 
 pub struct Popup<'a, C: Component> {
     title: String,
-    border_color: Color,
     width: u16,
     height: u16,
     animation_start_time: Instant,
@@ -25,18 +25,12 @@ impl<'a, C: Component> Popup<'a, C> {
     pub fn new(title: impl Into<String>, content: C) -> Self {
         Self {
             title: title.into(),
-            border_color: Theme::focused_border_color(),
             width: 40,
             height: 30,
             animation_start_time: Instant::now(),
             content,
             _marker: Default::default(),
         }
-    }
-
-    pub fn border_color(mut self, color: Color) -> Self {
-        self.border_color = color;
-        self
     }
 
     pub fn size(mut self, width: u16, height: u16) -> Self {
@@ -84,11 +78,12 @@ impl<'a, C: Component> Popup<'a, C> {
 }
 
 impl<'a, C: Component> Component for Popup<'a, C> {
+    //Dim Overlay
     fn render(&mut self, frame: &mut Frame, area: Rect, context: &RenderContext, dt: Duration) {
         frame.render_widget(
             Block::default().style(
                 Style::default()
-                    .bg(Color::Black)
+                    .bg(Theme::bg())
                     .add_modifier(Modifier::DIM),
             ),
             area,
@@ -100,13 +95,13 @@ impl<'a, C: Component> Component for Popup<'a, C> {
 
         let block = Block::bordered()
             .title(self.title.as_str().add_modifier(Modifier::BOLD))
+            .title_style(Theme::popup_title())
             .title_alignment(Alignment::Center)
-            .border_type(BorderType::Rounded)
-            .border_style(self.border_color);
+            .border_type(BorderType::Double)
+            .border_style(Theme::popup_border())
+            .style(Style::default().bg(Theme::popup_background()));
 
         let inner_area = block.inner(area);
-
-        self.content.render(frame, inner_area, context, dt);
 
         let mut fade_effect = fx::coalesce_from(
             Style::default(),
@@ -117,6 +112,7 @@ impl<'a, C: Component> Component for Popup<'a, C> {
             FxDuration::from_millis(self.animation_start_time.elapsed().as_millis() as u32);
 
         frame.render_widget(block, area);
+        self.content.render(frame, inner_area, context, dt);
         frame.render_effect(&mut fade_effect, area, duration);
     }
 
