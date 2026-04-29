@@ -38,7 +38,6 @@ pub struct RenderContext<'a> {
     pub selected_idx: Option<usize>,
     pub focused: &'a ComponentName,
     pub tick: u64,
-    // pub toast_manager: &'a mut ToastManager,
 }
 
 pub struct App<'a> {
@@ -210,11 +209,14 @@ impl<'a> App<'a> {
             }
 
             AppEvent::UserLoaded(user) => {
+                self.toast_manager.push_success(format!("User {} loaded successfully!", user.display_name));
                 self.user_state = Loaded(user);
                 vec![]
             }
 
             AppEvent::TicketLoaded(ticket) => {
+                let ticket_key = ticket.key.clone();
+
                 match self.tickets_mut() {
                     Some(tickets) => {
                         if let Some(existing) = tickets.iter_mut().find(|t| t.key == ticket.key) {
@@ -227,11 +229,13 @@ impl<'a> App<'a> {
                 };
 
                 self.close_popup();
+                self.toast_manager.push_success(format!("Ticket {} loaded successfully", ticket_key));
 
                 vec![]
             }
 
             AppEvent::TimeLogged { ticket_key } => {
+                self.toast_manager.push_success("Time logged successfully");
                 vec![Effect::Action(ActionEvent::FetchTicket { ticket_key })]
             }
 
@@ -239,6 +243,8 @@ impl<'a> App<'a> {
                 if let Some(tickets) = self.tickets_mut() {
                     tickets.retain(|ticket| ticket.key != ticket_key);
                 }
+
+                self.toast_manager.push_success(format!("Ticket {} removed successfully!", ticket_key));
 
                 vec![]
             }
@@ -265,7 +271,7 @@ impl<'a> App<'a> {
 
             AppEvent::ApiError(err) => {
                 self.ui_errors.push(UiError::Global { message: err.clone() });
-                self.toast_manager.push(err);
+                self.toast_manager.push_error(err);
                 vec![]
             }
             _ => {

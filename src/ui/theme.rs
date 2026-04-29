@@ -146,18 +146,49 @@ impl Theme {
         }
     }
 
-    pub fn toast_bg() -> Color { Color::Rgb(0x1a, 0x0e, 0x0e) }
-    pub fn toast_border() -> Style {
+    // TOAST ERROR
+    pub fn toast_error_bg() -> Color { Color::Rgb(0x1a, 0x0e, 0x0e) }
+    pub fn toast_error_border() -> Style {
         Style::default().fg(RED_DIM).remove_modifier(Modifier::DIM)
     }
-    pub fn toast_text() -> Style {
+    pub fn toast_error_text() -> Style {
         Style::default().fg(TEXT_BRIGHT).remove_modifier(Modifier::DIM)
     }
-    pub fn toast_progress_filled() -> Style {
+    pub fn toast_error_progress_filled() -> Style {
         Style::default().fg(RED).bg(Color::Rgb(0x1a, 0x0e, 0x0e)).remove_modifier(Modifier::DIM)
     }
-    pub fn toast_progress_empty() -> Style {
+    pub fn toast_error_progress_empty() -> Style {
         Style::default().bg(Color::Rgb(0x1a, 0x0e, 0x0e)).remove_modifier(Modifier::DIM)
+    }
+
+    // TOAST WARN
+    pub fn toast_warn_bg() -> Color { Color::Rgb(0x18, 0x12, 0x06) }
+    pub fn toast_warn_border() -> Style {
+        Style::default().fg(Color::Rgb(0x88, 0x55, 0x22)).remove_modifier(Modifier::DIM)
+    }
+    pub fn toast_warn_text() -> Style {
+        Style::default().fg(TEXT_BRIGHT).remove_modifier(Modifier::DIM)
+    }
+    pub fn toast_warn_progress_filled() -> Style {
+        Style::default().fg(WARN).bg(Color::Rgb(0x18, 0x12, 0x06)).remove_modifier(Modifier::DIM)
+    }
+    pub fn toast_warn_progress_empty() -> Style {
+        Style::default().bg(Color::Rgb(0x18, 0x12, 0x06)).remove_modifier(Modifier::DIM)
+    }
+
+    // TOAST SUCCESS
+    pub fn toast_success_bg() -> Color { Color::Rgb(0x0a, 0x16, 0x0c) }
+    pub fn toast_success_border() -> Style {
+        Style::default().fg(GREEN_DIM).remove_modifier(Modifier::DIM)
+    }
+    pub fn toast_success_text() -> Style {
+        Style::default().fg(TEXT_BRIGHT).remove_modifier(Modifier::DIM)
+    }
+    pub fn toast_success_progress_filled() -> Style {
+        Style::default().fg(GREEN).bg(Color::Rgb(0x0a, 0x16, 0x0c)).remove_modifier(Modifier::DIM)
+    }
+    pub fn toast_success_progress_empty() -> Style {
+        Style::default().bg(Color::Rgb(0x0a, 0x16, 0x0c)).remove_modifier(Modifier::DIM)
     }
 
     pub fn error() -> Style { Style::default().fg(RED) }

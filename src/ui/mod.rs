@@ -20,7 +20,6 @@ pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
         selected_idx: app.selected_idx,
         focused: &app.focused,
         tick: app.tick,
-        // toast_manager: &mut app.toast_manager,
     };
 
     pages::home::render(frame, &context, dt);

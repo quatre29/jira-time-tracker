@@ -5,6 +5,13 @@ use crate::{
 };
 use tokio::sync::mpsc::Sender;
 
+fn http_status_prefix(e: &anyhow::Error) -> String {
+    e.downcast_ref::<reqwest::Error>()
+        .and_then(|re| re.status())
+        .map(|s| format!("{}: ", s.as_u16()))
+        .unwrap_or_default()
+}
+
 pub fn dispatch(
     data_event: ActionEvent,
     app_tx: Sender<AppEvent>,
@@ -32,47 +39,46 @@ pub fn dispatch(
                 let _ = app_tx.send(AppEvent::TicketsLoaded(tickets)).await;
 
                 for (key, err) in errors {
-                    let _ = app_tx.send(AppEvent::ApiError(format!("{key}: {err}"))).await;
+                    let _ = app_tx.send(AppEvent::ApiError(format!("{}Failed to fetch ticket {}", http_status_prefix(&err), key))).await;
                 }
-
-                // match client.fetch_tickets(ticket_keys).await {
-                //     Ok(tickets) => {
-                //         let _ = app_tx.send(AppEvent::TicketsLoaded(tickets)).await;
-                //     }
-                //     Err(e) => {
-                //         let _ = app_tx.send(AppEvent::ApiError(e.to_string())).await;
-                //     }
-                // }
             });
         }
 
         ActionEvent::FetchTicket { ticket_key } => {
-            match storage.is_ticket_stored(&ticket_key) {
-                Ok(_) => {
-                    tokio::spawn(async move {
+            tokio::spawn(async move {
+                match storage.is_ticket_stored(&ticket_key) {
+                    Ok(true) => {
+                        let _ = app_tx.send(AppEvent::ApiError(format!("Ticket {} is already loaded!", ticket_key))).await;
+                    }
+                    Ok(false) => {
                         match client.fetch_ticket(&ticket_key).await {
                             Ok(ticket) => {
                                 storage.add_ticket_key(ticket.key.clone()).unwrap();
-
                                 let _ = app_tx.send(AppEvent::TicketLoaded(ticket)).await;
                             }
                             Err(e) => {
-                                let _ = app_tx.send(AppEvent::ApiError(e.to_string())).await;
+                                let _ = app_tx.send(AppEvent::ApiError(format!("{}Failed to fetch ticket {}", http_status_prefix(&e), ticket_key))).await;
                             }
                         }
-                    });
+                    }
+                    Err(e) => {
+                        let _ = app_tx.send(AppEvent::ApiError(format!("Storage error: {}", e))).await;
+                    }
                 }
-                Err(err) => {
-                    // TODO: we need to display error - ticket already existing!
-                }
-            }
+            });
         }
 
         ActionEvent::RemoveTicket { ticket_key } => {
             tokio::spawn(async move {
-                storage.remove_ticket_key(&ticket_key).expect("Storage error: Could not access storage");
-                let _ = app_tx.send(AppEvent::TicketRemoved { ticket_key }).await;
-                let _ = app_tx.send(AppEvent::ClosePopup).await;
+                match storage.remove_ticket_key(&ticket_key) {
+                    Ok(_) => {
+                        let _ = app_tx.send(AppEvent::TicketRemoved { ticket_key }).await;
+                        let _ = app_tx.send(AppEvent::ClosePopup).await;
+                    }
+                    Err(_) => {
+                        let _ = app_tx.send(AppEvent::ApiError("Storage error: Could not access storage".to_string())).await;
+                    }
+                }
             });
         }
 
@@ -83,7 +89,7 @@ pub fn dispatch(
                         let _ = app_tx.send(AppEvent::TimeLogged { ticket_key }).await;
                     }
                     Err(e) => {
-                        let _ = app_tx.send(AppEvent::ApiError(e.to_string())).await;
+                        let _ = app_tx.send(AppEvent::ApiError(format!("{}Failed to log time on {}", http_status_prefix(&e), ticket_key))).await;
                     }
                 }
             });
@@ -96,7 +102,7 @@ pub fn dispatch(
                         let _ = app_tx.send(AppEvent::UserLoaded(user)).await;
                     }
                     Err(e) => {
-                        let _ = app_tx.send(AppEvent::ApiError(e.to_string())).await;
+                        let _ = app_tx.send(AppEvent::ApiError(format!("{}Failed to fetch user", http_status_prefix(&e)))).await;
                     }
                 }
             });

@@ -6,16 +6,37 @@ use ratatui::widgets::{Block, BorderType, Borders, Paragraph, Wrap};
 use ratatui::Frame;
 use std::time::{Duration, Instant};
 
+#[derive(Clone, Copy)]
+pub enum ToastKind {
+    Error,
+    Warn,
+    Success,
+}
+
 pub struct Toast {
     pub message: String,
+    pub kind: ToastKind,
     created_at: Instant,
     duration: Duration,
 }
 
 impl Toast {
-    pub fn new(msg: impl Into<String>) -> Self {
+    pub fn error(msg: impl Into<String>) -> Self {
+        Self::new(msg, ToastKind::Error)
+    }
+
+    pub fn warn(msg: impl Into<String>) -> Self {
+        Self::new(msg, ToastKind::Warn)
+    }
+
+    pub fn success(msg: impl Into<String>) -> Self {
+        Self::new(msg, ToastKind::Success)
+    }
+
+    fn new(msg: impl Into<String>, kind: ToastKind) -> Self {
         Self {
             message: msg.into(),
+            kind,
             created_at: Instant::now(),
             duration: Duration::from_millis(4000),
         }
@@ -42,11 +63,35 @@ impl Toast {
     pub fn render(&self, frame: &mut Frame, area: Rect) {
         let undim = Style::default().remove_modifier(Modifier::DIM);
 
+        let (bg, border, text, filled, empty) = match self.kind {
+            ToastKind::Error => (
+                Theme::toast_error_bg(),
+                Theme::toast_error_border(),
+                Theme::toast_error_text(),
+                Theme::toast_error_progress_filled(),
+                Theme::toast_error_progress_empty(),
+            ),
+            ToastKind::Warn => (
+                Theme::toast_warn_bg(),
+                Theme::toast_warn_border(),
+                Theme::toast_warn_text(),
+                Theme::toast_warn_progress_filled(),
+                Theme::toast_warn_progress_empty(),
+            ),
+            ToastKind::Success => (
+                Theme::toast_success_bg(),
+                Theme::toast_success_border(),
+                Theme::toast_success_text(),
+                Theme::toast_success_progress_filled(),
+                Theme::toast_success_progress_empty(),
+            ),
+        };
+
         let block = Block::default()
             .borders(Borders::ALL)
             .border_type(BorderType::Rounded)
-            .border_style(Theme::toast_border())
-            .style(undim.bg(Theme::toast_bg()));
+            .border_style(border)
+            .style(undim.bg(bg));
 
         let inner = block.inner(area);
         frame.render_widget(block, area);
@@ -60,19 +105,19 @@ impl Toast {
         let msg_area = Rect { height: msg_lines, ..inner };
         frame.render_widget(
             Paragraph::new(self.message.as_str())
-                .style(Theme::toast_text())
+                .style(text)
                 .wrap(Wrap { trim: false }),
             msg_area,
         );
 
         // Progress bar — bottom row of inner area
         if inner.height >= 2 {
-            let filled = (self.progress() * inner.width as f64) as u16;
-            let empty = inner.width.saturating_sub(filled);
+            let filled_count = (self.progress() * inner.width as f64) as u16;
+            let empty_count = inner.width.saturating_sub(filled_count);
 
             let bar = Line::from(vec![
-                Span::styled("▓".repeat(filled as usize), Theme::toast_progress_filled()),
-                Span::styled(" ".repeat(empty as usize), Theme::toast_progress_empty()),
+                Span::styled("▓".repeat(filled_count as usize), filled),
+                Span::styled(" ".repeat(empty_count as usize), empty),
             ]);
 
             let bar_area = Rect {

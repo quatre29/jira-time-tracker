@@ -17,8 +17,16 @@ impl ToastManager {
         Self { toasts: vec![] }
     }
 
-    pub fn push(&mut self, toast_message: impl Into<String>) {
-        self.toasts.push(Toast::new(toast_message))
+    pub fn push_error(&mut self, msg: impl Into<String>) {
+        self.toasts.push(Toast::error(msg));
+    }
+
+    pub fn push_warn(&mut self, msg: impl Into<String>) {
+        self.toasts.push(Toast::warn(msg));
+    }
+
+    pub fn push_success(&mut self, msg: impl Into<String>) {
+        self.toasts.push(Toast::success(msg));
     }
 
     pub fn tick(&mut self) {

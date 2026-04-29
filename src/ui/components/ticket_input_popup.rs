@@ -25,7 +25,7 @@ impl<'a> Component for TicketInputPopup<'a> {
             Constraint::Length(3),
             Constraint::Fill(1),
         ])
-        .areas(area);
+            .areas(area);
 
         frame.render_widget(&self.input.textarea, input_area);
     }
@@ -39,7 +39,8 @@ impl<'a> Component for TicketInputPopup<'a> {
                     .lines()
                     .first()
                     .unwrap_or(&"".to_string())
-                    .clone();
+                    .clone()
+                    .to_uppercase();
 
                 Some(UiEvent::Action(ActionEvent::FetchTicket { ticket_key }))
             }
