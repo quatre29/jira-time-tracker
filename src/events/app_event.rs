@@ -11,9 +11,10 @@ pub enum AppEvent {
     TicketsLoaded(Vec<JiraTicket>),
     TicketLoaded(JiraTicket),
     UserLoaded(JiraUser),
+    SubtasksLoaded { parent_key: String, subtasks: Vec<JiraTicket> },
     TimeLogged { ticket_key: String },
     TicketRemoved { ticket_key: String },
-    
+
     ApiError(String),
     UiError(UiError),
 
@@ -27,10 +28,10 @@ pub enum AppEvent {
 pub enum ActionEvent {
     FetchTickets,
     FetchTicket { ticket_key: String },
+    FetchSubtasks { parent_key: String, subtask_keys: Vec<String> },
     RemoveTicket { ticket_key: String },
     LogTime { ticket_key: String, time_spent_seconds: u64, description: String, started: String },
     FetchUser,
-
 }
 
 pub enum UiEvent {

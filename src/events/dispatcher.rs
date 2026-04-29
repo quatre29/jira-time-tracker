@@ -68,6 +68,18 @@ pub fn dispatch(
             });
         }
 
+        ActionEvent::FetchSubtasks { parent_key, subtask_keys } => {
+            tokio::spawn(async move {
+                let (subtasks, errors) = client.fetch_tickets(subtask_keys).await;
+                let _ = app_tx.send(AppEvent::SubtasksLoaded { parent_key, subtasks }).await;
+                for (key, err) in errors {
+                    let _ = app_tx.send(AppEvent::ApiError(
+                        format!("{}Failed to fetch subtask {}", http_status_prefix(&err), key)
+                    )).await;
+                }
+            });
+        }
+
         ActionEvent::RemoveTicket { ticket_key } => {
             tokio::spawn(async move {
                 match storage.remove_ticket_key(&ticket_key) {

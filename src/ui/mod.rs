@@ -20,6 +20,7 @@ pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
         selected_idx: app.selected_idx,
         focused: &app.focused,
         tick: app.tick,
+        expanded_keys: &app.expanded_keys,
     };
 
     pages::home::render(frame, &context, dt);

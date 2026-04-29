@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
 use std::io;
 use std::time::{Duration, Instant};
 
@@ -38,6 +38,7 @@ pub struct RenderContext<'a> {
     pub selected_idx: Option<usize>,
     pub focused: &'a ComponentName,
     pub tick: u64,
+    pub expanded_keys: &'a HashSet<String>,
 }
 
 pub struct App<'a> {
@@ -57,6 +58,8 @@ pub struct App<'a> {
 
     pub pending_events: VecDeque<AppEvent>,
     pub toast_manager: ToastManager,
+    pub expanded_keys: HashSet<String>,
+    pub loading_subtasks: HashSet<String>,
 }
 
 impl<'a> App<'a> {
@@ -95,6 +98,8 @@ impl<'a> App<'a> {
 
             pending_events: vec![].into(),
             toast_manager: ToastManager::new(),
+            expanded_keys: HashSet::new(),
+            loading_subtasks: HashSet::new(),
         }
     }
 
@@ -269,6 +274,16 @@ impl<'a> App<'a> {
                 vec![]
             }
 
+            AppEvent::SubtasksLoaded { parent_key, subtasks } => {
+                self.loading_subtasks.remove(&parent_key);
+                if let LoadState::Loaded(tickets) = &mut self.tickets_state {
+                    if let Some(parent) = tickets.iter_mut().find(|t| t.key == parent_key) {
+                        parent.subtasks = subtasks;
+                    }
+                }
+                vec![]
+            }
+
             AppEvent::ApiError(err) => {
                 self.ui_errors.push(UiError::Global { message: err.clone() });
                 self.toast_manager.push_error(err);
@@ -292,38 +307,52 @@ impl<'a> App<'a> {
         crate::ui::render(frame, self, dt);
     }
 
-    fn selected_ticket(&self) -> Option<&JiraTicket> {
-        let tickets = self.tickets()?;
-        let selected_idx = self.selected_idx?;
+    fn flat_len(&self) -> usize {
+        let tickets = match &self.tickets_state {
+            LoadState::Loaded(t) => t,
+            _ => return 0,
+        };
+        tickets.iter().map(|t| {
+            1 + if self.expanded_keys.contains(&t.key) { t.subtasks.len() } else { 0 }
+        }).sum()
+    }
 
-        tickets.get(selected_idx)
+    fn selected_ticket(&self) -> Option<&JiraTicket> {
+        let idx = self.selected_idx?;
+        let tickets = match &self.tickets_state {
+            LoadState::Loaded(t) => t,
+            _ => return None,
+        };
+        let mut flat = 0;
+        for ticket in tickets {
+            if flat == idx { return Some(ticket); }
+            flat += 1;
+            if self.expanded_keys.contains(&ticket.key) {
+                for subtask in &ticket.subtasks {
+                    if flat == idx { return Some(subtask); }
+                    flat += 1;
+                }
+            }
+        }
+        None
     }
 
     fn next_ticket(&mut self) {
-        if let Some(tickets) = self.tickets() {
-            if tickets.is_empty() {
-                return;
-            }
-
-            self.selected_idx = Some(match self.selected_idx {
-                Some(i) => (1 + i) % tickets.len(), // Move down, wrap to top
-                None => 0,
-            })
-        }
+        let len = self.flat_len();
+        if len == 0 { return; }
+        self.selected_idx = Some(match self.selected_idx {
+            Some(i) => (i + 1) % len,
+            None => 0,
+        });
     }
 
     fn previous_ticket(&mut self) {
-        if let Some(tickets) = self.tickets() {
-            if tickets.is_empty() {
-                return;
-            }
-
-            self.selected_idx = Some(match self.selected_idx {
-                Some(i) if i > 0 => i - 1,    // Move up
-                Some(_) => tickets.len() - 1, // Wrap to bottom
-                None => 0,
-            })
-        }
+        let len = self.flat_len();
+        if len == 0 { return; }
+        self.selected_idx = Some(match self.selected_idx {
+            Some(0) | None => len - 1,
+            Some(i) => i - 1,
+        });
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
@@ -349,6 +378,69 @@ impl<'a> App<'a> {
         }
 
         Ok(())
+    }
+
+    /// If the flat item at `idx` is a parent, returns `(key, subtask_keys, subtasks_loaded)`.
+    fn parent_at(&self, idx: usize) -> Option<(String, Vec<String>, bool)> {
+        let tickets = match &self.tickets_state {
+            LoadState::Loaded(t) => t,
+            _ => return None,
+        };
+        let mut flat = 0;
+        for ticket in tickets {
+            if flat == idx {
+                return Some((
+                    ticket.key.clone(),
+                    ticket.subtask_keys.clone(),
+                    !ticket.subtasks.is_empty(),
+                ));
+            }
+            flat += 1;
+            if self.expanded_keys.contains(&ticket.key) {
+                flat += ticket.subtasks.len();
+            }
+        }
+        None
+    }
+
+    /// If the flat item at `idx` is a subtask, returns the parent key.
+    fn subtask_parent_at(&self, idx: usize) -> Option<String> {
+        let tickets = match &self.tickets_state {
+            LoadState::Loaded(t) => t,
+            _ => return None,
+        };
+        let mut flat = 0;
+        for ticket in tickets {
+            flat += 1; // parent slot
+            if self.expanded_keys.contains(&ticket.key) {
+                for _ in &ticket.subtasks {
+                    if flat == idx {
+                        return Some(ticket.key.clone());
+                    }
+                    flat += 1;
+                }
+            }
+        }
+        None
+    }
+
+    /// Returns the flat index of a parent ticket by key.
+    fn parent_flat_idx(&self, parent_key: &str) -> Option<usize> {
+        let tickets = match &self.tickets_state {
+            LoadState::Loaded(t) => t,
+            _ => return None,
+        };
+        let mut flat = 0;
+        for ticket in tickets {
+            if ticket.key == parent_key {
+                return Some(flat);
+            }
+            flat += 1;
+            if self.expanded_keys.contains(&ticket.key) {
+                flat += ticket.subtasks.len();
+            }
+        }
+        None
     }
 
     fn handle_ticket_list_keys(&mut self, key: KeyEvent) -> io::Result<()> {
@@ -387,6 +479,32 @@ impl<'a> App<'a> {
             KeyCode::Down => {
                 if let PopupState::None = self.popup {
                     self.next_ticket();
+                }
+            }
+
+            KeyCode::Right if matches!(self.popup, PopupState::None) => {
+                if let Some(idx) = self.selected_idx {
+                    if let Some((parent_key, subtask_keys, already_loaded)) = self.parent_at(idx) {
+                        self.expanded_keys.insert(parent_key.clone());
+                        if !already_loaded && !self.loading_subtasks.contains(&parent_key) {
+                            self.loading_subtasks.insert(parent_key.clone());
+                            self.dispatch(ActionEvent::FetchSubtasks { parent_key, subtask_keys });
+                        }
+                    }
+                }
+            }
+
+            KeyCode::Left if matches!(self.popup, PopupState::None) => {
+                if let Some(idx) = self.selected_idx {
+                    if let Some(parent_key) = self.subtask_parent_at(idx) {
+                        // On a subtask — jump to parent and collapse
+                        let parent_flat = self.parent_flat_idx(&parent_key);
+                        self.expanded_keys.remove(&parent_key);
+                        self.selected_idx = parent_flat.or(Some(0));
+                    } else if let Some((key, _, _)) = self.parent_at(idx) {
+                        // On an expanded parent — collapse it
+                        self.expanded_keys.remove(&key);
+                    }
                 }
             }
 

@@ -21,6 +21,9 @@ pub struct JiraTicket {
     pub time_spent_seconds: u64,
     pub original_estimate_seconds: u64,
     pub remaining_estimate_seconds: u64,
+
+    pub subtask_keys: Vec<String>,
+    pub subtasks: Vec<JiraTicket>,
 }
 
 impl From<JiraIssueDto> for JiraTicket {
@@ -61,6 +64,9 @@ impl From<JiraIssueDto> for JiraTicket {
                 .as_ref()
                 .and_then(|t| t.remaining_estimate_seconds)
                 .unwrap_or(0),
+
+            subtask_keys: dto.fields.subtasks.into_iter().map(|s| s.key).collect(),
+            subtasks: vec![],
         }
     }
 }
