@@ -24,3 +24,4 @@ tui-piechart = {git = "https://github.com/matthewhaynesonline/tui-piechart.git",
 tui-textarea-2 = "0.9.1"
 ratatui-core = "0.1.0"
 regex = "1.12.3"
+anyhow = "1.0.102"

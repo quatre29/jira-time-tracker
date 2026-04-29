@@ -1,11 +1,9 @@
-use tokio::sync::mpsc::Sender;
 use crate::{
-    api::{
-        jira_client::{JiraClient},
-    },
+    api::jira_client::JiraClient,
     events::app_event::{ActionEvent, AppEvent},
     storage::storage::Storage,
 };
+use tokio::sync::mpsc::Sender;
 
 pub fn dispatch(
     data_event: ActionEvent,
@@ -29,20 +27,28 @@ pub fn dispatch(
                     }
                 };
 
-                match client.fetch_tickets(ticket_keys).await {
-                    Ok(tickets) => {
-                        let _ = app_tx.send(AppEvent::TicketsLoaded(tickets)).await;
-                    }
-                    Err(e) => {
-                        let _ = app_tx.send(AppEvent::ApiError(e.to_string())).await;
-                    }
+                let (tickets, errors) = client.fetch_tickets(ticket_keys).await;
+
+                let _ = app_tx.send(AppEvent::TicketsLoaded(tickets)).await;
+
+                for (key, err) in errors {
+                    let _ = app_tx.send(AppEvent::ApiError(format!("{key}: {err}"))).await;
                 }
+
+                // match client.fetch_tickets(ticket_keys).await {
+                //     Ok(tickets) => {
+                //         let _ = app_tx.send(AppEvent::TicketsLoaded(tickets)).await;
+                //     }
+                //     Err(e) => {
+                //         let _ = app_tx.send(AppEvent::ApiError(e.to_string())).await;
+                //     }
+                // }
             });
         }
 
         ActionEvent::FetchTicket { ticket_key } => {
             match storage.is_ticket_stored(&ticket_key) {
-                Ok(_ticket) => {
+                Ok(_) => {
                     tokio::spawn(async move {
                         match client.fetch_ticket(&ticket_key).await {
                             Ok(ticket) => {
@@ -55,20 +61,20 @@ pub fn dispatch(
                             }
                         }
                     });
-                },
+                }
                 Err(err) => {
                     // TODO: we need to display error - ticket already existing!
-                },
+                }
             }
         }
 
         ActionEvent::RemoveTicket { ticket_key } => {
             tokio::spawn(async move {
                 storage.remove_ticket_key(&ticket_key).expect("Storage error: Could not access storage");
-               let _ = app_tx.send(AppEvent::TicketRemoved { ticket_key, }).await;
-               let _ = app_tx.send(AppEvent::ClosePopup).await;
+                let _ = app_tx.send(AppEvent::TicketRemoved { ticket_key }).await;
+                let _ = app_tx.send(AppEvent::ClosePopup).await;
             });
-        },
+        }
 
         ActionEvent::LogTime { ticket_key, time_spent_seconds, started, description } => {
             tokio::spawn(async move {

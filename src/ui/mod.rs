@@ -11,6 +11,7 @@ pub mod matrix_rain;
 pub mod pages;
 pub mod theme;
 pub mod time_entry;
+pub mod notifications;
 
 pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
     let context = RenderContext {
@@ -19,6 +20,7 @@ pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
         selected_idx: app.selected_idx,
         focused: &app.focused,
         tick: app.tick,
+        // toast_manager: &mut app.toast_manager,
     };
 
     pages::home::render(frame, &context, dt);
@@ -30,4 +32,7 @@ pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
     // Render footer last so it always appears above the popup dim overlay
     let footer_area = pages::home::footer_area(frame.area());
     Footer::new().render(frame, footer_area, &context, dt);
+
+    app.toast_manager.tick();
+    app.toast_manager.render(frame, frame.area(), &context, dt)
 }

@@ -16,7 +16,10 @@ use crate::events::dispatcher::dispatch;
 use crate::events::effect::Effect;
 use crate::storage::storage::Storage;
 use crate::ui::components::popup::Popup;
-use crate::ui::components::{Component, ComponentName, ConfirmationPopup, TicketInputPopup, TimeInputPopup};
+use crate::ui::components::{
+    Component, ComponentName, ConfirmationPopup, TicketInputPopup, TimeInputPopup,
+};
+use crate::ui::notifications::toast_manager::ToastManager;
 
 pub enum PopupState<'a> {
     None,
@@ -35,6 +38,7 @@ pub struct RenderContext<'a> {
     pub selected_idx: Option<usize>,
     pub focused: &'a ComponentName,
     pub tick: u64,
+    // pub toast_manager: &'a mut ToastManager,
 }
 
 pub struct App<'a> {
@@ -53,6 +57,7 @@ pub struct App<'a> {
     pub user_state: LoadState<JiraUser>,
 
     pub pending_events: VecDeque<AppEvent>,
+    pub toast_manager: ToastManager,
 }
 
 impl<'a> App<'a> {
@@ -90,6 +95,7 @@ impl<'a> App<'a> {
             user_state: Loading,
 
             pending_events: vec![].into(),
+            toast_manager: ToastManager::new(),
         }
     }
 
@@ -165,7 +171,12 @@ impl<'a> App<'a> {
     }
 
     pub fn dispatch(&self, action: ActionEvent) {
-        dispatch(action, self.app_tx.clone(), &self.storage, &self.jira_client);
+        dispatch(
+            action,
+            self.app_tx.clone(),
+            &self.storage,
+            &self.jira_client,
+        );
     }
 
     async fn process_pending_events(&mut self) -> io::Result<()> {
@@ -212,9 +223,7 @@ impl<'a> App<'a> {
                             tickets.push(ticket);
                         }
                     }
-                    None => {
-                        self.tickets_state = Loaded(vec![ticket])
-                    }
+                    None => self.tickets_state = Loaded(vec![ticket]),
                 };
 
                 self.close_popup();
@@ -255,7 +264,8 @@ impl<'a> App<'a> {
             }
 
             AppEvent::ApiError(err) => {
-                self.ui_errors.push(UiError::Global { message: err });
+                self.ui_errors.push(UiError::Global { message: err.clone() });
+                self.toast_manager.push(err);
                 vec![]
             }
             _ => {
@@ -344,10 +354,22 @@ impl<'a> App<'a> {
             }
 
             KeyCode::Char('d') => {
-                let ticket_key = self.selected_ticket().unwrap().key.clone();
+                let selected_ticket = self.selected_ticket();
 
-                self.show_popup("Confirmation", 40, 20, ConfirmationPopup::new("Are you sure you want to remove this ticket?", ActionEvent::RemoveTicket { ticket_key }));
-                self.focus(ComponentName::ConfirmationPopup);
+                if let Some(ticket) = selected_ticket {
+                    let ticket_key = ticket.key.clone();
+
+                    self.show_popup(
+                        "Confirmation",
+                        40,
+                        20,
+                        ConfirmationPopup::new(
+                            "Are you sure you want to remove this ticket?",
+                            ActionEvent::RemoveTicket { ticket_key },
+                        ),
+                    );
+                    self.focus(ComponentName::ConfirmationPopup);
+                }
             }
 
             KeyCode::Up => {
@@ -366,7 +388,12 @@ impl<'a> App<'a> {
                 let selected_ticket = self.selected_ticket();
 
                 if let Some(selected_ticket) = selected_ticket {
-                    self.show_popup(selected_ticket.title.clone().as_str(), 40, 40, TimeInputPopup::new(self.selected_ticket().unwrap().key.clone()));
+                    self.show_popup(
+                        selected_ticket.title.clone().as_str(),
+                        40,
+                        40,
+                        TimeInputPopup::new(self.selected_ticket().unwrap().key.clone()),
+                    );
                     self.focus(ComponentName::TimeInputPopup);
                 }
             }

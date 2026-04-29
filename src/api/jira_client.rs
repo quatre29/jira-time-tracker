@@ -1,12 +1,12 @@
-use base64::{Engine, engine::general_purpose};
-use futures::{StreamExt, stream};
-use reqwest::{Client, header};
+use base64::{engine::general_purpose, Engine};
+use futures::{stream, StreamExt};
+use reqwest::{header, Client};
 use serde_json::json;
 
-use super::JiraConfig;
 use super::dto::*;
-use crate::Result;
+use super::JiraConfig;
 use crate::api::models::{JiraTicket, JiraUser};
+use crate::Result;
 
 #[derive(Clone)]
 pub struct JiraClient {
@@ -48,34 +48,42 @@ impl JiraClient {
         Ok(data.issues.into_iter().map(JiraTicket::from).collect())
     }
 
-    pub async fn fetch_tickets(&self, keys: Vec<String>) -> Result<Vec<JiraTicket>> {
+    pub async fn fetch_tickets(
+        &self,
+        keys: Vec<String>,
+    ) -> (Vec<JiraTicket>, Vec<(String, anyhow::Error)>) {
         if keys.is_empty() {
-            return Ok(vec![]);
+            return (vec![], vec![]);
         }
 
         let client = self.clone();
 
-        let tickets = stream::iter(keys)
+        let results = stream::iter(keys)
             .map(|key| {
                 let client = client.clone();
 
                 async move {
-                    match client.fetch_ticket(&key).await {
-                        Ok(ticket) => Some(ticket),
-                        Err(e) => {
-                            eprintln!("Failed {}: {}", key, e);
-                            None
-                        }
-                    }
+                    let result = client.fetch_ticket(&key).await;
+                    (key, result)
                 }
             })
             .buffer_unordered(5)
-            .filter_map(|opt| async move { opt })
             .collect::<Vec<_>>()
             .await;
 
-        Ok(tickets)
+        let mut tickets = Vec::new();
+        let mut errors = Vec::new();
+
+        for (key, result) in results {
+            match result {
+                Ok(ticket) => tickets.push(ticket),
+                Err(e) => errors.push((key, e))
+            }
+        }
+
+        (tickets, errors)
     }
+
 
     pub async fn fetch_ticket(&self, ticket_key: &str) -> Result<JiraTicket> {
         let res = self
@@ -91,13 +99,24 @@ impl JiraClient {
     }
 
     pub async fn fetch_user(&self) -> Result<JiraUser> {
-        let res = self.client.get(self.url("/myself")).send().await?.error_for_status()?;
+        let res = self
+            .client
+            .get(self.url("/myself"))
+            .send()
+            .await?
+            .error_for_status()?;
         let user: JiraUserDto = res.json().await?;
 
         Ok(JiraUser::from(user))
     }
 
-    pub async fn log_time(&self, ticket_id: String, time_spent_seconds: u64, started: String, description: String) -> Result<String> {
+    pub async fn log_time(
+        &self,
+        ticket_id: String,
+        time_spent_seconds: u64,
+        started: String,
+        description: String,
+    ) -> Result<String> {
         let body = json!({
             "comment": {
                 "content": [
@@ -118,8 +137,9 @@ impl JiraClient {
             "timeSpentSeconds": time_spent_seconds
         });
 
-        let res = self.client
-            .post(self.url(&format!("/issue/{}/worklog", ticket_id) ))
+        let res = self
+            .client
+            .post(self.url(&format!("/issue/{}/worklog", ticket_id)))
             .json(&body)
             .send()
             .await?

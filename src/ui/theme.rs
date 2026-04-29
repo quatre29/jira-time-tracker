@@ -106,15 +106,6 @@ impl Theme {
         Style::default().fg(CYAN).add_modifier(Modifier::BOLD)
     }
 
-    // pub fn button_confirm() -> ButtonTheme {
-    //     ButtonTheme {
-    //         text: TEXT,
-    //         background: GREEN,
-    //         highlight: Color::Rgb(0x44, 0xee, 0x77),
-    //         shadow: GREEN_DIM,
-    //     }
-    // }
-
     pub fn button_confirm() -> ButtonTheme {
         ButtonTheme {
             text: Color::Rgb(16, 24, 48),
@@ -153,6 +144,20 @@ impl Theme {
             highlight: Color::Rgb(0xff, 0xc0, 0x60),
             shadow: AMBER_DIM,
         }
+    }
+
+    pub fn toast_bg() -> Color { Color::Rgb(0x1a, 0x0e, 0x0e) }
+    pub fn toast_border() -> Style {
+        Style::default().fg(RED_DIM).remove_modifier(Modifier::DIM)
+    }
+    pub fn toast_text() -> Style {
+        Style::default().fg(TEXT_BRIGHT).remove_modifier(Modifier::DIM)
+    }
+    pub fn toast_progress_filled() -> Style {
+        Style::default().fg(RED).bg(Color::Rgb(0x1a, 0x0e, 0x0e)).remove_modifier(Modifier::DIM)
+    }
+    pub fn toast_progress_empty() -> Style {
+        Style::default().bg(Color::Rgb(0x1a, 0x0e, 0x0e)).remove_modifier(Modifier::DIM)
     }
 
     pub fn error() -> Style { Style::default().fg(RED) }
