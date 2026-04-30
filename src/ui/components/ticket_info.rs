@@ -127,10 +127,12 @@ impl TicketInfo {
             return;
         }
 
+        let is_over = total > 0 && spent > total;
+
         let layout = Layout::vertical([
             Constraint::Length(1), // Labels
             Constraint::Length(1), // Progress bar
-            Constraint::Length(1), // Remaining
+            Constraint::Length(1), // Remaining / overrun
         ])
         .split(area);
 
@@ -138,18 +140,30 @@ impl TicketInfo {
         let spent_str = if ticket.time_spent.is_empty() { "0h".to_string() } else { ticket.time_spent.clone() };
         let estimate_str = if ticket.original_estimate.is_empty() { "—".to_string() } else { ticket.original_estimate.clone() };
 
-        let time_label = Line::from(vec![
+        let spent_style = if is_over { Theme::error() } else { Theme::accent() };
+
+        let mut label_spans = vec![
             Span::styled("Logged ", Theme::dimmed()),
-            Span::styled(&spent_str, Theme::accent()),
+            Span::styled(&spent_str, spent_style),
             Span::styled(" / ", Theme::dimmed()),
             Span::styled(&estimate_str, Theme::text()),
-        ]);
-        frame.render_widget(Paragraph::new(vec![time_label]), layout[0]);
+        ];
+
+        if is_over {
+            label_spans.push(Span::styled(
+                "  ⚠ OVER ESTIMATE",
+                Style::default()
+                    .fg(ratatui::style::Color::Rgb(0xe5, 0x49, 0x3a))
+                    .add_modifier(ratatui::style::Modifier::BOLD),
+            ));
+        }
+
+        frame.render_widget(Paragraph::new(vec![Line::from(label_spans)]), layout[0]);
 
         // Progress bar with visible outline
         let bar_width = layout[1].width as usize;
         if bar_width >= 4 {
-            let inner_width = bar_width.saturating_sub(2); // account for [ ]
+            let inner_width = bar_width.saturating_sub(2);
             let ratio = if total > 0 {
                 (spent as f64 / total as f64).min(1.0)
             } else {
@@ -158,15 +172,15 @@ impl TicketInfo {
             let filled = ((ratio * inner_width as f64).round() as usize).min(inner_width);
             let empty = inner_width.saturating_sub(filled);
 
-            let bar_color = if ratio > 0.9 {
-                ratatui::style::Color::Rgb(0xe5, 0x49, 0x3a) // red
+            let bar_color = if is_over {
+                ratatui::style::Color::Rgb(0xe5, 0x49, 0x3a) // red — over budget
             } else if ratio > 0.7 {
-                ratatui::style::Color::Rgb(0xdd, 0x99, 0x33) // amber
+                ratatui::style::Color::Rgb(0xdd, 0x99, 0x33) // amber — getting close
             } else {
                 Theme::chart_spent() // healthy
             };
 
-            let track_color = ratatui::style::Color::Rgb(0x28, 0x2c, 0x3a); // border color for empty track
+            let track_color = ratatui::style::Color::Rgb(0x28, 0x2c, 0x3a);
 
             let bar_line = Line::from(vec![
                 Span::styled("│", Style::default().fg(track_color)),
@@ -177,13 +191,31 @@ impl TicketInfo {
             frame.render_widget(Paragraph::new(vec![bar_line]), layout[1]);
         }
 
-        // Remaining
-        let remaining_str = if ticket.remaining_estimate.is_empty() { "—".to_string() } else { ticket.remaining_estimate.clone() };
-        let remaining_line = Line::from(vec![
-            Span::styled("Remaining ", Theme::dimmed()),
-            Span::styled(&remaining_str, Theme::text()),
-        ]);
-        frame.render_widget(Paragraph::new(vec![remaining_line]), layout[2]);
+        // Remaining or overrun warning
+        if is_over {
+            let over_seconds = spent - total;
+            let over_str = format_seconds_to_jira(over_seconds);
+            let overrun_line = Line::from(vec![
+                Span::styled(
+                    "⚠ Over by ",
+                    Style::default().fg(ratatui::style::Color::Rgb(0xe5, 0x49, 0x3a)),
+                ),
+                Span::styled(
+                    over_str,
+                    Style::default()
+                        .fg(ratatui::style::Color::Rgb(0xe5, 0x49, 0x3a))
+                        .add_modifier(ratatui::style::Modifier::BOLD),
+                ),
+            ]);
+            frame.render_widget(Paragraph::new(vec![overrun_line]), layout[2]);
+        } else {
+            let remaining_str = if ticket.remaining_estimate.is_empty() { "—".to_string() } else { ticket.remaining_estimate.clone() };
+            let remaining_line = Line::from(vec![
+                Span::styled("Remaining ", Theme::dimmed()),
+                Span::styled(&remaining_str, Theme::text()),
+            ]);
+            frame.render_widget(Paragraph::new(vec![remaining_line]), layout[2]);
+        }
     }
 
     fn render_metadata(&self, frame: &mut Frame, area: Rect, ticket: &JiraTicket) {
@@ -287,5 +319,18 @@ impl Component for TicketInfo {
                 );
             }
         }
+    }
+}
+
+/// Converts seconds to Jira-style time format (e.g. "2h 30m").
+fn format_seconds_to_jira(seconds: u64) -> String {
+    let hours = seconds / 3600;
+    let minutes = (seconds % 3600) / 60;
+
+    match (hours, minutes) {
+        (0, 0) => "0m".to_string(),
+        (0, m) => format!("{}m", m),
+        (h, 0) => format!("{}h", h),
+        (h, m) => format!("{}h {}m", h, m),
     }
 }
