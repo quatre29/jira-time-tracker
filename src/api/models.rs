@@ -69,6 +69,15 @@ pub struct JiraTicket {
     pub title: String,
     pub issue_type: IssueType,
 
+    pub status: String,
+    pub status_category: String,
+    pub priority: String,
+    pub assignee: String,
+    pub reporter: String,
+    pub labels: Vec<String>,
+    pub created: String,
+    pub updated: String,
+
     pub time_spent: String,
     pub original_estimate: String,
     pub remaining_estimate: String,
@@ -92,11 +101,49 @@ impl From<JiraIssueDto> for JiraTicket {
             .map(|n| IssueType::from_name(&n))
             .unwrap_or(IssueType::Other("unknown".to_string()));
 
+        let status = dto.fields.status
+            .as_ref()
+            .and_then(|s| s.name.clone())
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        let status_category = dto.fields.status
+            .and_then(|s| s.status_category)
+            .and_then(|c| c.key)
+            .unwrap_or_else(|| "undefined".to_string());
+
+        let priority = dto.fields.priority
+            .and_then(|p| p.name)
+            .unwrap_or_else(|| "None".to_string());
+
+        let assignee = dto.fields.assignee
+            .and_then(|a| a.display_name)
+            .unwrap_or_else(|| "Unassigned".to_string());
+
+        let reporter = dto.fields.reporter
+            .and_then(|r| r.display_name)
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        let created = dto.fields.created
+            .map(|c| format_jira_date(&c))
+            .unwrap_or_default();
+
+        let updated = dto.fields.updated
+            .map(|u| format_jira_date(&u))
+            .unwrap_or_default();
+
         Self {
             id: dto.id,
             key: dto.key,
             title: dto.fields.summary,
             issue_type,
+            status,
+            status_category,
+            priority,
+            assignee,
+            reporter,
+            labels: dto.fields.labels,
+            created,
+            updated,
 
             time_spent: time
                 .as_ref()
@@ -131,6 +178,16 @@ impl From<JiraIssueDto> for JiraTicket {
             subtask_keys: dto.fields.subtasks.into_iter().map(|s| s.key).collect(),
             subtasks: vec![],
         }
+    }
+}
+
+/// Formats a Jira ISO datetime string to a short readable date.
+fn format_jira_date(iso: &str) -> String {
+    // Jira sends "2024-01-15T10:30:00.000+0000" — just take the date part
+    if iso.len() >= 10 {
+        iso[..10].to_string()
+    } else {
+        iso.to_string()
     }
 }
 

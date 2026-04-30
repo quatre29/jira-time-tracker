@@ -8,13 +8,11 @@ use crate::ui::{
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::Style
-    ,
+    style::Style,
     widgets::Block,
     Frame,
 };
 use std::time::Duration;
-use tui_piechart::{PieChart, PieSlice};
 
 pub fn footer_area(area: Rect) -> Rect {
     let horizontal = Layout::horizontal([
@@ -102,13 +100,4 @@ pub fn render(frame: &mut Frame, context: &RenderContext, dt: Duration) {
     TicketList::new().render(frame, body_layout[0], context, dt);
     UserInfo::new().render(frame, body_info_layout[1], context, dt);
     TicketInfo::new().render(frame, body_info_layout[0], context, dt);
-
-    let slices = vec![
-        PieSlice::new("Spent", 45.0, Theme::chart_spent()),
-        PieSlice::new("Remaining", 55.0, Theme::chart_remaining()),
-    ];
-
-    let pie_chart = PieChart::new(slices).high_resolution(true);
-
-    frame.render_widget(pie_chart, body_info_layout[0]);
 }

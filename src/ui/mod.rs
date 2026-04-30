@@ -14,10 +14,13 @@ pub mod time_entry;
 pub mod notifications;
 
 pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
+    let selected_ticket = app.selected_ticket_ref().cloned();
+
     let context = RenderContext {
         tickets_state: &app.tickets_state,
         user_state: &app.user_state,
         selected_idx: app.selected_idx,
+        selected_ticket: selected_ticket.as_ref(),
         focused: &app.focused,
         tick: app.tick,
         expanded_keys: &app.expanded_keys,

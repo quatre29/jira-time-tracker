@@ -36,6 +36,7 @@ pub struct RenderContext<'a> {
     pub tickets_state: &'a LoadState<Vec<JiraTicket>>,
     pub user_state: &'a LoadState<JiraUser>,
     pub selected_idx: Option<usize>,
+    pub selected_ticket: Option<&'a JiraTicket>,
     pub focused: &'a ComponentName,
     pub tick: u64,
     pub expanded_keys: &'a HashSet<String>,
@@ -315,6 +316,10 @@ impl<'a> App<'a> {
         tickets.iter().map(|t| {
             1 + if self.expanded_keys.contains(&t.key) { t.subtasks.len() } else { 0 }
         }).sum()
+    }
+
+    pub fn selected_ticket_ref(&self) -> Option<&JiraTicket> {
+        self.selected_ticket()
     }
 
     fn selected_ticket(&self) -> Option<&JiraTicket> {

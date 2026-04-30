@@ -20,6 +20,27 @@ pub struct JiraFieldsDto {
     pub issuetype: Option<IssueTypeDto>,
 
     #[serde(default)]
+    pub status: Option<StatusDto>,
+
+    #[serde(default)]
+    pub priority: Option<PriorityDto>,
+
+    #[serde(default)]
+    pub assignee: Option<AssigneeDto>,
+
+    #[serde(default)]
+    pub reporter: Option<AssigneeDto>,
+
+    #[serde(default)]
+    pub labels: Vec<String>,
+
+    #[serde(default)]
+    pub created: Option<String>,
+
+    #[serde(default)]
+    pub updated: Option<String>,
+
+    #[serde(default)]
     pub timetracking: Option<TimeTrackingDto>,
 
     #[serde(default)]
@@ -29,6 +50,30 @@ pub struct JiraFieldsDto {
 #[derive(Debug, Deserialize)]
 pub struct IssueTypeDto {
     pub name: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StatusDto {
+    pub name: Option<String>,
+    #[serde(default, rename = "statusCategory")]
+    pub status_category: Option<StatusCategoryDto>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StatusCategoryDto {
+    pub key: Option<String>,
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PriorityDto {
+    pub name: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssigneeDto {
+    pub display_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
