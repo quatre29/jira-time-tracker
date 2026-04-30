@@ -66,6 +66,7 @@ impl Component for TicketList {
 
                     let line = Line::from(vec![
                         Span::styled(indicator, Theme::accent()),
+                        Span::styled(format!("{} ", ticket.issue_type.icon()), ticket.issue_type.style()),
                         Span::styled(ticket.key.clone(), Theme::ticket_key()),
                         Span::styled(" - ", Theme::dimmed()),
                         Span::styled(ticket.title.clone(), Theme::text()),
@@ -81,6 +82,7 @@ impl Component for TicketList {
                             for subtask in &ticket.subtasks {
                                 let line = Line::from(vec![
                                     Span::styled("    ↳ ", Theme::dimmed()),
+                                    Span::styled(format!("{} ", subtask.issue_type.icon()), subtask.issue_type.style()),
                                     Span::styled(subtask.key.clone(), Theme::ticket_key()),
                                     Span::styled(" - ", Theme::dimmed()),
                                     Span::styled(subtask.title.clone(), Theme::text()),

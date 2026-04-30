@@ -17,10 +17,18 @@ pub struct JiraFieldsDto {
     pub summary: String,
 
     #[serde(default)]
+    pub issuetype: Option<IssueTypeDto>,
+
+    #[serde(default)]
     pub timetracking: Option<TimeTrackingDto>,
 
     #[serde(default)]
     pub subtasks: Vec<SubtaskRefDto>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct IssueTypeDto {
+    pub name: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
