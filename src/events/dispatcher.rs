@@ -119,5 +119,32 @@ pub fn dispatch(
                 }
             });
         }
+
+        ActionEvent::FetchUserStats => {
+            tokio::spawn(async move {
+                let in_progress_count = match client.fetch_in_progress_count().await {
+                    Ok(count) => count,
+                    Err(e) => {
+                        let _ = app_tx.send(AppEvent::ApiError(format!("{}Failed to fetch in-progress count", http_status_prefix(&e)))).await;
+                        0
+                    }
+                };
+
+                let weekly_worklogs = match client.fetch_weekly_worklogs().await {
+                    Ok(logs) => logs,
+                    Err(e) => {
+                        let _ = app_tx.send(AppEvent::ApiError(format!("{}Failed to fetch weekly worklogs", http_status_prefix(&e)))).await;
+                        vec![]
+                    }
+                };
+
+                let stats = crate::api::models::UserStats {
+                    in_progress_count,
+                    weekly_worklogs,
+                };
+
+                let _ = app_tx.send(AppEvent::UserStatsLoaded(stats)).await;
+            });
+        }
     }
 }

@@ -1,6 +1,6 @@
 use derive_more::From;
 
-use crate::api::models::{JiraTicket, JiraUser};
+use crate::api::models::{JiraTicket, JiraUser, UserStats};
 use crate::ui::components::ComponentName;
 
 #[derive(From)]
@@ -11,6 +11,7 @@ pub enum AppEvent {
     TicketsLoaded(Vec<JiraTicket>),
     TicketLoaded(JiraTicket),
     UserLoaded(JiraUser),
+    UserStatsLoaded(UserStats),
     SubtasksLoaded { parent_key: String, subtasks: Vec<JiraTicket> },
     TimeLogged { ticket_key: String },
     TicketRemoved { ticket_key: String },
@@ -32,6 +33,7 @@ pub enum ActionEvent {
     RemoveTicket { ticket_key: String },
     LogTime { ticket_key: String, time_spent_seconds: u64, description: String, started: String },
     FetchUser,
+    FetchUserStats,
 }
 
 pub enum UiEvent {

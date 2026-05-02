@@ -19,6 +19,7 @@ pub fn render(frame: &mut Frame, app: &mut App, dt: Duration) {
     let context = RenderContext {
         tickets_state: &app.tickets_state,
         user_state: &app.user_state,
+        user_stats: &app.user_stats,
         selected_idx: app.selected_idx,
         selected_ticket: selected_ticket.as_ref(),
         focused: &app.focused,

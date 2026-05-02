@@ -1,8 +1,31 @@
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct JiraSearchResponse {
+    #[serde(default)]
     pub issues: Vec<JiraIssueDto>,
+    #[serde(default)]
+    pub is_last: bool,
+}
+
+/// Lightweight issue from search results (may not have fields).
+#[derive(Debug, Deserialize)]
+pub struct JiraSearchIssueDto {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    pub key: String,
+}
+
+/// Search response with lightweight issues (for count/key-only queries).
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct JiraSearchLightResponse {
+    #[serde(default)]
+    pub issues: Vec<JiraSearchIssueDto>,
+    #[serde(default)]
+    pub is_last: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -104,3 +127,22 @@ pub struct JiraUserDto {
     pub locale: Option<String>,
     pub email_address: Option<String>,
 }
+
+// ── Worklog DTOs ──────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorklogSearchResponse {
+    pub worklogs: Vec<WorklogEntryDto>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorklogEntryDto {
+    pub time_spent: Option<String>,
+    pub time_spent_seconds: Option<u64>,
+    pub started: Option<String>,
+    pub issue_id: Option<String>,
+}
+
+// (JiraSearchCountResponse removed — using JiraSearchResponse for all searches)

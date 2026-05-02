@@ -8,6 +8,22 @@ pub struct JiraUser {
     pub locale: String,
 }
 
+/// Stats about the user's workload and time logging.
+#[derive(Debug, Clone)]
+pub struct UserStats {
+    pub in_progress_count: u64,
+    pub weekly_worklogs: Vec<WorklogEntry>,
+}
+
+/// A single worklog entry from Jira.
+#[derive(Debug, Clone)]
+pub struct WorklogEntry {
+    pub ticket_key: String,
+    pub time_spent: String,
+    pub time_spent_seconds: u64,
+    pub started: String,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum IssueType {
     Bug,

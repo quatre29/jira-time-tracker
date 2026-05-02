@@ -8,7 +8,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::api::config::JiraConfig;
 use crate::api::jira_client::JiraClient;
-use crate::api::models::{JiraTicket, JiraUser};
+use crate::api::models::{JiraTicket, JiraUser, UserStats};
 use crate::app::LoadState::{Loaded, Loading};
 use crate::events::app_event::AppEvent;
 use crate::events::app_event::{ActionEvent, UiError, UiEvent};
@@ -35,6 +35,7 @@ pub enum LoadState<T> {
 pub struct RenderContext<'a> {
     pub tickets_state: &'a LoadState<Vec<JiraTicket>>,
     pub user_state: &'a LoadState<JiraUser>,
+    pub user_stats: &'a LoadState<UserStats>,
     pub selected_idx: Option<usize>,
     pub selected_ticket: Option<&'a JiraTicket>,
     pub focused: &'a ComponentName,
@@ -56,6 +57,7 @@ pub struct App<'a> {
 
     pub tickets_state: LoadState<Vec<JiraTicket>>,
     pub user_state: LoadState<JiraUser>,
+    pub user_stats: LoadState<UserStats>,
 
     pub pending_events: VecDeque<AppEvent>,
     pub toast_manager: ToastManager,
@@ -82,6 +84,13 @@ impl<'a> App<'a> {
             &jira_client,
         );
 
+        dispatch(
+            ActionEvent::FetchUserStats,
+            app_tx.clone(),
+            &storage,
+            &jira_client,
+        );
+
         Self {
             exit: false,
             selected_idx: Some(0),
@@ -96,6 +105,7 @@ impl<'a> App<'a> {
 
             tickets_state: Loading,
             user_state: Loading,
+            user_stats: Loading,
 
             pending_events: vec![].into(),
             toast_manager: ToastManager::new(),
@@ -217,6 +227,11 @@ impl<'a> App<'a> {
             AppEvent::UserLoaded(user) => {
                 self.toast_manager.push_success(format!("User {} loaded successfully!", user.display_name));
                 self.user_state = Loaded(user);
+                vec![]
+            }
+
+            AppEvent::UserStatsLoaded(stats) => {
+                self.user_stats = Loaded(stats);
                 vec![]
             }
 
