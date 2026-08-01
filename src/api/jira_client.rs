@@ -1,13 +1,13 @@
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use chrono::{Datelike, Local, NaiveDate};
-use futures::{stream, StreamExt};
-use reqwest::{header, Client};
+use futures::{StreamExt, stream};
+use reqwest::{Client, header};
 use serde_json::json;
 
-use super::dto::*;
 use super::JiraConfig;
-use crate::api::models::{JiraTicket, JiraUser, WorklogEntry};
+use super::dto::*;
 use crate::Result;
+use crate::api::models::{JiraTicket, JiraUser, WorklogEntry};
 
 #[derive(Clone)]
 pub struct JiraClient {
@@ -26,19 +26,10 @@ impl JiraClient {
             header::AUTHORIZATION,
             format!("Basic {}", encoded).parse().unwrap(),
         );
-        headers.insert(
-            header::ACCEPT,
-            "application/json".parse().unwrap(),
-        );
-        headers.insert(
-            header::CONTENT_TYPE,
-            "application/json".parse().unwrap(),
-        );
+        headers.insert(header::ACCEPT, "application/json".parse().unwrap());
+        headers.insert(header::CONTENT_TYPE, "application/json".parse().unwrap());
 
-        let client = Client::builder()
-            .default_headers(headers)
-            .build()
-            .unwrap();
+        let client = Client::builder().default_headers(headers).build().unwrap();
 
         Self { client, config }
     }
@@ -49,7 +40,12 @@ impl JiraClient {
 
     /// Performs a JQL search using the new POST /search/jql endpoint.
     /// Returns full issue data (requires fields that include summary etc).
-    async fn jql_search(&self, jql: &str, fields: &[&str], max_results: u32) -> Result<JiraSearchResponse> {
+    async fn jql_search(
+        &self,
+        jql: &str,
+        fields: &[&str],
+        max_results: u32,
+    ) -> Result<JiraSearchResponse> {
         let body = json!({
             "jql": jql,
             "maxResults": max_results,
@@ -70,7 +66,11 @@ impl JiraClient {
     }
 
     /// Performs a lightweight JQL search — only returns issue keys/ids.
-    async fn jql_search_keys(&self, jql: &str, max_results: u32) -> Result<JiraSearchLightResponse> {
+    async fn jql_search_keys(
+        &self,
+        jql: &str,
+        max_results: u32,
+    ) -> Result<JiraSearchLightResponse> {
         let body = json!({
             "jql": jql,
             "maxResults": max_results,
@@ -91,11 +91,25 @@ impl JiraClient {
     }
 
     pub async fn fetch_assigned_tickets(&self) -> Result<Vec<JiraTicket>> {
-        let data = self.jql_search(
-            "assignee=currentUser()",
-            &["summary", "issuetype", "status", "priority", "assignee", "reporter", "labels", "created", "updated", "timetracking", "subtasks"],
-            50,
-        ).await?;
+        let data = self
+            .jql_search(
+                "assignee=currentUser()",
+                &[
+                    "summary",
+                    "issuetype",
+                    "status",
+                    "priority",
+                    "assignee",
+                    "reporter",
+                    "labels",
+                    "created",
+                    "updated",
+                    "timetracking",
+                    "subtasks",
+                ],
+                50,
+            )
+            .await?;
 
         Ok(data.issues.into_iter().map(JiraTicket::from).collect())
     }
@@ -129,13 +143,12 @@ impl JiraClient {
         for (key, result) in results {
             match result {
                 Ok(ticket) => tickets.push(ticket),
-                Err(e) => errors.push((key, e))
+                Err(e) => errors.push((key, e)),
             }
         }
 
         (tickets, errors)
     }
-
 
     pub async fn fetch_ticket(&self, ticket_key: &str) -> Result<JiraTicket> {
         let res = self
@@ -276,10 +289,7 @@ impl JiraClient {
 
     /// Fallback for weekly worklogs
     async fn fetch_weekly_worklogs_fallback(&self, since: &str) -> Result<Vec<WorklogEntry>> {
-        let jql = format!(
-            "assignee = currentUser() AND updated >= \"{}\"",
-            since
-        );
+        let jql = format!("assignee = currentUser() AND updated >= \"{}\"", since);
 
         let data = self.jql_search_keys(&jql, 50).await?;
 
@@ -324,25 +334,18 @@ impl JiraClient {
             date_to_epoch_millis(since)
         ));
 
-        let res = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .error_for_status()?;
+        let res = self.client.get(&url).send().await?.error_for_status()?;
 
         let data: WorklogSearchResponse = res.json().await?;
 
         let entries = data
             .worklogs
             .into_iter()
-            .filter_map(|w| {
-                Some(WorklogEntry {
-                    ticket_key: ticket_key.to_string(),
-                    time_spent: w.time_spent.unwrap_or_else(|| "0m".to_string()),
-                    time_spent_seconds: w.time_spent_seconds.unwrap_or(0),
-                    started: w.started.unwrap_or_default(),
-                })
+            .map(|w| WorklogEntry {
+                ticket_key: ticket_key.to_string(),
+                time_spent: w.time_spent.unwrap_or_else(|| "0m".to_string()),
+                time_spent_seconds: w.time_spent_seconds.unwrap_or(0),
+                started: w.started.unwrap_or_default(),
             })
             .collect();
 

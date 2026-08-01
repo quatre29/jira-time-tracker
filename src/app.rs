@@ -225,7 +225,8 @@ impl<'a> App<'a> {
             }
 
             AppEvent::UserLoaded(user) => {
-                self.toast_manager.push_success(format!("User {} loaded successfully!", user.display_name));
+                self.toast_manager
+                    .push_success(format!("User {} loaded successfully!", user.display_name));
                 self.user_state = Loaded(user);
                 vec![]
             }
@@ -250,7 +251,8 @@ impl<'a> App<'a> {
                 };
 
                 self.close_popup();
-                self.toast_manager.push_success(format!("Ticket {} loaded successfully", ticket_key));
+                self.toast_manager
+                    .push_success(format!("Ticket {} loaded successfully", ticket_key));
 
                 vec![]
             }
@@ -265,7 +267,8 @@ impl<'a> App<'a> {
                     tickets.retain(|ticket| ticket.key != ticket_key);
                 }
 
-                self.toast_manager.push_success(format!("Ticket {} removed successfully!", ticket_key));
+                self.toast_manager
+                    .push_success(format!("Ticket {} removed successfully!", ticket_key));
 
                 vec![]
             }
@@ -290,7 +293,10 @@ impl<'a> App<'a> {
                 vec![]
             }
 
-            AppEvent::SubtasksLoaded { parent_key, subtasks } => {
+            AppEvent::SubtasksLoaded {
+                parent_key,
+                subtasks,
+            } => {
                 self.loading_subtasks.remove(&parent_key);
                 if let LoadState::Loaded(tickets) = &mut self.tickets_state {
                     if let Some(parent) = tickets.iter_mut().find(|t| t.key == parent_key) {
@@ -301,7 +307,9 @@ impl<'a> App<'a> {
             }
 
             AppEvent::ApiError(err) => {
-                self.ui_errors.push(UiError::Global { message: err.clone() });
+                self.ui_errors.push(UiError::Global {
+                    message: err.clone(),
+                });
                 self.toast_manager.push_error(err);
                 vec![]
             }
@@ -328,9 +336,17 @@ impl<'a> App<'a> {
             LoadState::Loaded(t) => t,
             _ => return 0,
         };
-        tickets.iter().map(|t| {
-            1 + if self.expanded_keys.contains(&t.key) { t.subtasks.len() } else { 0 }
-        }).sum()
+
+        tickets
+            .iter()
+            .map(|t| {
+                1 + if self.expanded_keys.contains(&t.key) {
+                    t.subtasks.len()
+                } else {
+                    0
+                }
+            })
+            .sum()
     }
 
     pub fn selected_ticket_ref(&self) -> Option<&JiraTicket> {
@@ -344,12 +360,17 @@ impl<'a> App<'a> {
             _ => return None,
         };
         let mut flat = 0;
+
         for ticket in tickets {
-            if flat == idx { return Some(ticket); }
+            if flat == idx {
+                return Some(ticket);
+            }
             flat += 1;
             if self.expanded_keys.contains(&ticket.key) {
                 for subtask in &ticket.subtasks {
-                    if flat == idx { return Some(subtask); }
+                    if flat == idx {
+                        return Some(subtask);
+                    }
                     flat += 1;
                 }
             }
@@ -359,7 +380,10 @@ impl<'a> App<'a> {
 
     fn next_ticket(&mut self) {
         let len = self.flat_len();
-        if len == 0 { return; }
+        if len == 0 {
+            return;
+        }
+
         self.selected_idx = Some(match self.selected_idx {
             Some(i) => (i + 1) % len,
             None => 0,
@@ -368,7 +392,10 @@ impl<'a> App<'a> {
 
     fn previous_ticket(&mut self) {
         let len = self.flat_len();
-        if len == 0 { return; }
+        if len == 0 {
+            return;
+        }
+
         self.selected_idx = Some(match self.selected_idx {
             Some(0) | None => len - 1,
             Some(i) => i - 1,
@@ -508,7 +535,10 @@ impl<'a> App<'a> {
                         self.expanded_keys.insert(parent_key.clone());
                         if !already_loaded && !self.loading_subtasks.contains(&parent_key) {
                             self.loading_subtasks.insert(parent_key.clone());
-                            self.dispatch(ActionEvent::FetchSubtasks { parent_key, subtask_keys });
+                            self.dispatch(ActionEvent::FetchSubtasks {
+                                parent_key,
+                                subtask_keys,
+                            });
                         }
                     }
                 }
